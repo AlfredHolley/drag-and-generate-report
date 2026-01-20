@@ -23,8 +23,11 @@ RUN pip install --upgrade pip setuptools wheel
 # Copy requirements first for better caching
 COPY backend/requirements.txt /app/requirements.txt
 
-# Install Python dependencies (core packages first)
-RUN pip install --no-cache-dir Flask flask-cors pandas fpdf2 reportlab numpy werkzeug Pillow gunicorn
+# Install Python dependencies from requirements.txt
+# This layer will be cached unless requirements.txt changes
+RUN pip install --no-cache-dir -r requirements.txt || \
+    (echo "Warning: Some packages from requirements.txt failed, installing core packages..." && \
+     pip install --no-cache-dir Flask flask-cors pandas fpdf2 reportlab numpy werkzeug Pillow gunicorn)
 
 # Try to install svglib separately (optional, for SVG logo support)
 # This may fail if pycairo dependencies are missing, but the app will still work

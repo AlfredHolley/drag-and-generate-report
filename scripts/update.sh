@@ -58,11 +58,17 @@ echo "📁 Ensuring directories exist..."
 mkdir -p backend/uploads backend/outputs
 touch backend/uploads/.gitkeep backend/outputs/.gitkeep 2>/dev/null || true
 
-# Rebuild and restart containers
-echo "🔨 Rebuilding Docker images..."
-docker-compose build --no-cache
+# Stop existing containers to free ports
+echo "🛑 Stopping existing containers..."
+docker-compose down || true
 
-echo "🔄 Restarting containers..."
+# Rebuild Docker images (using cache if possible)
+# Only rebuild if requirements.txt or Dockerfile changed
+echo "🔨 Rebuilding Docker images (with cache)..."
+docker-compose build
+
+# Start containers
+echo "🚀 Starting containers..."
 docker-compose up -d
 
 # Wait for services to be ready
