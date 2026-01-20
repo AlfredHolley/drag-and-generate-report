@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   backend:
     build:
@@ -43,9 +42,10 @@ services:
       - backend
     networks:
       - app-network
-      # Uncomment and set your proxy network name if you want to connect to it
-      # - proxy-network
+      - shared-proxy
 
 networks:
   app-network:
     driver: bridge
+  shared-proxy:
+    external: true
