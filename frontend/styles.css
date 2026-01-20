@@ -227,7 +227,7 @@ body {
     font-weight: 300;
 }
 
-/* Steps Section */
+/* Steps Section - Always visible at bottom before footer */
 .steps-section {
     display: flex;
     justify-content: center;
@@ -238,6 +238,12 @@ body {
     flex-wrap: nowrap;
     background: #ecebe5;
     width: 100%;
+    /* Always visible, not affected by section hiding */
+    position: relative;
+    z-index: 1;
+    /* Ensure it's always displayed */
+    visibility: visible !important;
+    display: flex !important;
 }
 
 .step-item {
