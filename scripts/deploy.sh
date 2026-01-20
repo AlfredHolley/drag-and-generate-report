@@ -24,8 +24,10 @@ if [ ! -f .env ]; then
     echo "📝 Creating .env file from .env.example..."
     cp .env.example .env
     echo "⚠️  Please edit .env file with your configuration before continuing."
-    echo "Press Enter to continue after editing .env..."
-    read
+    if [ -t 0 ]; then  # Check if running interactively
+        echo "Press Enter to continue after editing .env..."
+        read
+    fi
 fi
 
 # Create necessary directories

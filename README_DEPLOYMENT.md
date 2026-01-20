@@ -148,6 +148,14 @@ ls -la backend/outputs/
 
 ### Mise à jour du code
 
+#### Déploiement automatique (recommandé)
+
+Le déploiement automatique est configuré via GitHub Actions. Voir [README_CI_CD.md](README_CI_CD.md) pour la configuration.
+
+Quand vous poussez sur la branche `main`, le code est automatiquement mis à jour sur le VPS.
+
+#### Mise à jour manuelle
+
 ```bash
 git pull
 docker-compose up -d --build
