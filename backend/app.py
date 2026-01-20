@@ -217,11 +217,10 @@ def process_file():
             # Mark activity for PDF
             _update_activity(output_path)
             
-            # Delete uploaded CSV file after successful PDF generation
-            try:
-                _delete_file_safe(uploaded_file)
-            except Exception as e:
-                print(f"Warning: Could not delete uploaded file {uploaded_file}: {e}")
+            # Keep CSV file for potential updates (doctor comments, etc.)
+            # It will be cleaned up by the cleanup service after inactivity timeout
+            # Mark activity for CSV file to keep it alive
+            _update_activity(uploaded_file)
         except Exception as e:
             return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
         
