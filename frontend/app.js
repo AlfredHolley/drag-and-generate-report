@@ -13,6 +13,7 @@ const errorSection = document.getElementById('errorSection');
 const progressFill = document.getElementById('progressFill');
 const downloadBtn = document.getElementById('downloadBtn');
 const retryBtn = document.getElementById('retryBtn');
+const backBtn = document.getElementById('backBtn');
 const errorText = document.getElementById('errorText');
 let doctorComments = null;
 let updateBtn = null;
@@ -210,6 +211,9 @@ dropZone.addEventListener('drop', handleDrop);
 // Buttons
 downloadBtn.addEventListener('click', handleDownload);
 retryBtn.addEventListener('click', resetUI);
+if (backBtn) {
+    backBtn.addEventListener('click', resetUI);
+}
 
 // Close modals with Escape key
 document.addEventListener('keydown', (e) => {

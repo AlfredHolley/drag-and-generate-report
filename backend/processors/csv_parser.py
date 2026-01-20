@@ -62,47 +62,109 @@ class CSVParser:
         return first_col == '' or first_col == 'nan'
     
     def _extract_date_columns(self, df):
-        """Extract date columns from the CSV"""
-        # Date columns are typically in row 3 (index 3). In this dataset, the header row often
-        # contains "ID ..." labels above each date, so we MUST NOT filter them out by "ID".
-        date_row = df.iloc[3]
+        """Extract date columns from the CSV and the row index that contains them.
+
+        Many lab exports use a layout like:
+        - Row 2: headers (Analisis, ID ..., Unidad)
+        - Row 3: dates
+        But some files can shift these rows. We therefore *search* for the row that looks
+        most like a date row (contains multiple date-like strings).
+        """
+        if df is None or df.empty or df.shape[0] < 2:
+            return [], None
+
+        def _looks_like_date(s: str) -> bool:
+            if not s or s.lower() in ("nan", "none", "null"):
+                return False
+            s = s.strip()
+            return ("/" in s) or ("." in s) or ("-" in s)
+
+        best_row_idx = None
+        best_score = 0
+
+        # Search the first 10 rows (or fewer) for a likely date row
+        max_scan = min(10, df.shape[0])
+        for r in range(max_scan):
+            try:
+                row = df.iloc[r]
+            except (IndexError, KeyError):
+                continue
+            score = 0
+            for c, v in enumerate(row):
+                if c <= 1:  # skip first two columns (empty + "Analisis")
+                    continue
+                if _looks_like_date(str(v)):
+                    score += 1
+            if score > best_score:
+                best_score = score
+                best_row_idx = r
+
+        if best_row_idx is None or best_score == 0:
+            return [], None
+
+        date_row = df.iloc[best_row_idx]
         date_columns = []
 
-        # Unit column is usually the last one
-        unit_col = df.shape[1] - 1
+        # Unit column is usually the last non-empty header column, but dates row often ends with empty.
+        unit_col_guess = df.shape[1] - 1
 
         for idx, val in enumerate(date_row):
-            # Skip first two columns (empty + "Analisis") and unit column
-            if idx <= 1 or idx == unit_col:
+            # Skip first two columns (empty + "Analisis") and likely unit column
+            if idx <= 1 or idx == unit_col_guess:
                 continue
 
             val_str = str(val).strip()
             if not val_str or val_str == "nan":
                 continue
 
-            # Heuristic: date strings usually contain "/" or "." or "-"
-            if ("/" in val_str) or ("." in val_str) or ("-" in val_str):
+            if _looks_like_date(val_str):
                 date_columns.append(idx)
 
-        return date_columns
+        return date_columns, best_row_idx
+
+    def _find_header_row_idx(self, df):
+        """Find the header row (contains 'Analisis' and/or 'Unidad')."""
+        if df is None or df.empty:
+            return None
+        max_scan = min(10, df.shape[0])
+        for r in range(max_scan):
+            try:
+                row = df.iloc[r]
+            except (IndexError, KeyError):
+                continue
+            joined = " ".join(str(x).strip().upper() for x in row if pd.notna(x))
+            if "ANALISIS" in joined or "UNIDAD" in joined:
+                return r
+        return None
     
     def parse(self, filepath):
         """Parse CSV file and extract structured data"""
         # Read CSV without header to preserve structure
         df = pd.read_csv(filepath, header=None, encoding='utf-8')
+        if df is None or df.empty:
+            return {'categories': [], 'date_columns': []}
         
         # Extract date columns
-        date_cols = self._extract_date_columns(df)
+        date_cols, date_row_idx = self._extract_date_columns(df)
+        header_row_idx = self._find_header_row_idx(df)
+
+        # If we couldn't find a date row, we can't build the report safely
+        if not date_cols or date_row_idx is None:
+            raise ValueError("Could not detect the date row/columns in the CSV. Please verify the export format.")
         
         # Find unit column by looking for "Unidad" in header row (row 2, index 2)
         # Note: CSV structure: row 0-1 (metadata), row 2 (headers with "Analisis", "ID ...", "Unidad"), row 3 (dates), row 4+ (data)
         unit_col = None
-        header_row = df.iloc[2]  # Row with "Analisis", "ID ...", "Unidad"
-        for idx, val in enumerate(header_row):
-            val_str = str(val).strip().upper()
-            if 'UNIDAD' in val_str:
-                unit_col = idx
-                break
+        if header_row_idx is not None:
+            try:
+                header_row = df.iloc[header_row_idx]
+                for idx, val in enumerate(header_row):
+                    val_str = str(val).strip().upper()
+                    if 'UNIDAD' in val_str:
+                        unit_col = idx
+                        break
+            except (IndexError, KeyError):
+                unit_col = None
         
         # Fallback: try second-to-last column (index df.shape[1] - 2) as "Unidad" is usually before the last empty column
         if unit_col is None:
@@ -114,8 +176,11 @@ class CSVParser:
         current_category = None
         parameters = []
         
-        # Start from row 4 (index 4) where data begins
-        for idx in range(4, len(df)):
+        # Start after the date/header rows (whichever is lower), but never before 0
+        data_start_idx = max(i for i in [date_row_idx, header_row_idx] if i is not None) + 1
+        data_start_idx = max(0, data_start_idx)
+
+        for idx in range(data_start_idx, len(df)):
             row = df.iloc[idx]
             
             # Skip empty rows
@@ -152,7 +217,10 @@ class CSVParser:
                             val = row.iloc[date_col_idx]
                             if pd.notna(val) and str(val).strip() and str(val).strip() != 'nan':
                                 # Get date from row 3
-                                date_str = str(df.iloc[3, date_col_idx]).strip()
+                                if date_row_idx < df.shape[0] and date_col_idx < df.shape[1]:
+                                    date_str = str(df.iloc[date_row_idx, date_col_idx]).strip()
+                                else:
+                                    continue
                                 values[date_str] = str(val).strip()
                     
                     # Extract unit from the "Unidad" column
@@ -213,7 +281,11 @@ class CSVParser:
         
         return {
             'categories': categories,
-            'date_columns': [str(df.iloc[3, idx]).strip() for idx in date_cols]
+            'date_columns': [
+                str(df.iloc[date_row_idx, idx]).strip()
+                for idx in date_cols
+                if date_row_idx is not None and date_row_idx < df.shape[0] and idx < df.shape[1]
+            ]
         }
     
     def _map_category_to_english(self, spanish_name):
