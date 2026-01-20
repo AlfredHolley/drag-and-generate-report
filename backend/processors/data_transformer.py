@@ -28,22 +28,42 @@ class DataTransformer:
         all_parameters = []
         for category in categories:
             for param in category['parameters']:
-                transformed_param = self._transform_parameter(param, sorted_dates)
-                all_parameters.append(transformed_param)
+                # Check if parameter has values BEFORE transformation
+                # Values can be in dict format {date: value} from CSV parser
+                raw_values = param.get('values', {})
+                has_raw_values = False
+                if isinstance(raw_values, dict):
+                    # Check if dict has any non-empty values
+                    for date_key, val in raw_values.items():
+                        if val and str(val).strip() and str(val).strip().lower() not in ['nan', '', 'none', 'null']:
+                            has_raw_values = True
+                            break
+                elif isinstance(raw_values, list):
+                    # Already transformed format
+                    for val_obj in raw_values:
+                        value = val_obj.get('value') if isinstance(val_obj, dict) else val_obj
+                        if value and str(value).strip() and str(value).strip().lower() not in ['nan', '', 'none', 'null']:
+                            has_raw_values = True
+                            break
+                
+                # Only transform and add parameters that have values
+                if has_raw_values:
+                    transformed_param = self._transform_parameter(param, sorted_dates)
+                    all_parameters.append(transformed_param)
         
         # Regroup parameters by their category from parameters.json (or CSV category as fallback)
         # Use categories from REFERENCE_VALUES.md (categories.json) in the correct order
         category_map = {}
         for param in all_parameters:
-            # Filter out parameters with no values
+            # Double-check: Filter out parameters with no values after transformation
             has_values = False
             for val_obj in param.get('values', []):
-                value = val_obj.get('value')
-                if value and str(value).strip() and str(value).strip().lower() != 'nan':
+                value = val_obj.get('value') if isinstance(val_obj, dict) else val_obj
+                if value and str(value).strip() and str(value).strip().lower() not in ['nan', '', 'none', 'null']:
                     has_values = True
                     break
             
-            # Skip parameters with no values
+            # Skip parameters with no values (shouldn't happen if check above worked, but safety check)
             if not has_values:
                 continue
             
@@ -92,6 +112,16 @@ class DataTransformer:
                     'parameters': params
                 }
                 transformed_categories.append(transformed_category)
+        
+        # Ensure we always return at least one category if we had any parameters
+        # This prevents "No data to process" errors when all categories are filtered out
+        if not transformed_categories and all_parameters:
+            # Create an "Uncategorized" category with remaining parameters
+            transformed_categories = [{
+                'name': 'Uncategorized',
+                'spanish_name': 'Sin categoría',
+                'parameters': all_parameters
+            }]
         
         return {
             'categories': transformed_categories,

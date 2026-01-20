@@ -171,9 +171,15 @@ def process_file():
             parser = CSVParser()
             raw_data = parser.parse(uploaded_file)
             
+            # Log parsing results for debugging
+            num_categories = len(raw_data.get('categories', []))
+            total_params = sum(len(cat.get('parameters', [])) for cat in raw_data.get('categories', []))
+            app.logger.info(f"CSV parsed: {num_categories} categories, {total_params} total parameters")
+            
             if not raw_data.get('categories') or len(raw_data['categories']) == 0:
                 return jsonify({'error': 'No categories found in CSV. Please check the file format.'}), 400
         except Exception as e:
+            app.logger.error(f"CSV parsing failed: {str(e)}", exc_info=True)
             return jsonify({'error': f'CSV parsing failed: {str(e)}. Please check the file format.'}), 400
         
         # Transform data
@@ -181,9 +187,16 @@ def process_file():
             transformer = DataTransformer()
             structured_data = transformer.transform(raw_data)
             
+            # Log transformation results for debugging
+            num_transformed_categories = len(structured_data.get('categories', []))
+            total_transformed_params = sum(len(cat.get('parameters', [])) for cat in structured_data.get('categories', []))
+            app.logger.info(f"Data transformed: {num_transformed_categories} categories, {total_transformed_params} total parameters")
+            
             if not structured_data.get('categories') or len(structured_data['categories']) == 0:
+                app.logger.warning(f"No data after transformation. Raw data had {num_categories} categories with {total_params} parameters")
                 return jsonify({'error': 'No data to process. Please check the file format.'}), 400
         except Exception as e:
+            app.logger.error(f"Data transformation failed: {str(e)}", exc_info=True)
             return jsonify({'error': f'Data transformation failed: {str(e)}'}), 500
         
         # Generate PDF
