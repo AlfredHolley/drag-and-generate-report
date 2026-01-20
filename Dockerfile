@@ -13,8 +13,6 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libcairo2-dev \
     libgirepository1.0-dev \
-    libpango1.0-dev \
-    libgdk-pixbuf2.0-dev \
     pkg-config \
     curl \
     && rm -rf /var/lib/apt/lists/*
