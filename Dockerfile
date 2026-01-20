@@ -7,16 +7,21 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
+    libfreetype6-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    libpng-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip first
+RUN pip install --upgrade pip setuptools wheel
 
 # Copy requirements first for better caching
 COPY backend/requirements.txt /app/requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Install Gunicorn for production
-RUN pip install --no-cache-dir gunicorn
 
 # Copy backend code
 COPY backend/ /app/
