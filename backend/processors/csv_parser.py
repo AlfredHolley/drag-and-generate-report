@@ -36,16 +36,24 @@ class CSVParser:
         except (IndexError, KeyError):
             return False
         
-        if not first_col or first_col == 'nan':
+        if not first_col or first_col == 'nan' or first_col == '':
             return False
+        
+        # Exclude rows that look like dates or IDs
+        first_col_upper = first_col.upper()
+        if any(x in first_col_upper for x in ['ID ', 'ANALISIS', 'UNIDAD', '/', '-', '.']):
+            # Check if it contains date-like patterns (numbers with separators)
+            if any(c.isdigit() for c in first_col) and (('/' in first_col) or ('-' in first_col) or ('.' in first_col)):
+                return False
         
         # Check if first column is not empty and has few non-empty values in other columns
         try:
-            non_empty_count = sum(1 for val in row.iloc[1:] if pd.notna(val) and str(val).strip() and str(val).strip() != 'nan')
+            non_empty_count = sum(1 for val in row.iloc[1:] if pd.notna(val) and str(val).strip() and str(val).strip() not in ['nan', '', 'None', 'null'])
         except (IndexError, KeyError):
             return False
         
-        return non_empty_count < 3  # Category rows have very few values
+        # Category rows have very few values in other columns (relaxed from < 3 to < 5)
+        return non_empty_count < 5
     
     def _is_parameter_row(self, row):
         """Check if a row represents a parameter"""
@@ -253,17 +261,27 @@ class CSVParser:
                     category_name_spanish = str(row.iloc[0]).strip()
                 except (IndexError, KeyError):
                     continue
-                # Map to English category name
-                category_name = self._map_category_to_english(category_name_spanish)
-                current_category = {
-                    'name': category_name,
-                    'spanish_name': category_name_spanish,
-                    'parameters': []
-                }
-                categories.append(current_category)
+                if category_name_spanish and category_name_spanish != 'nan':
+                    # Map to English category name
+                    category_name = self._map_category_to_english(category_name_spanish)
+                    current_category = {
+                        'name': category_name,
+                        'spanish_name': category_name_spanish,
+                        'parameters': []
+                    }
+                    categories.append(current_category)
             
             # Check if it's a parameter row
-            elif self._is_parameter_row(row) and current_category is not None:
+            # Allow parameters even if no category found (will use default "General")
+            if self._is_parameter_row(row):
+                if current_category is None:
+                    # Create default category if none exists
+                    current_category = {
+                        'name': 'General',
+                        'spanish_name': 'General',
+                        'parameters': []
+                    }
+                    categories.append(current_category)
                 try:
                     param_name_spanish = str(row.iloc[1]).strip() if len(row) > 1 else ''
                 except (IndexError, KeyError):
