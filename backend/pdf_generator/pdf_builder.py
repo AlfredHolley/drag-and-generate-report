@@ -45,8 +45,25 @@ class PDFBuilder(FPDF):
     
     def _get_logo_path(self):
         """Get logo path, convert SVG to PNG if needed"""
-        logo_svg = os.path.join(os.path.dirname(__file__), '..', '..', 'logo_bw.svg')
-        if not os.path.exists(logo_svg):
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # Try multiple possible logo paths (for Docker and local development)
+        possible_logo_paths = [
+            "/app/logo_bw.svg",  # Docker container path
+            os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'logo_bw.svg')),  # Absolute relative path
+            os.path.join(os.path.dirname(__file__), '..', '..', 'logo_bw.svg'),  # Relative path
+        ]
+        
+        logo_svg = None
+        for logo_path in possible_logo_paths:
+            if os.path.exists(logo_path):
+                logo_svg = logo_path
+                logger.info(f"Found logo at: {logo_svg}")
+                break
+        
+        if not logo_svg:
+            logger.warning(f"Logo not found in any of the expected locations: {possible_logo_paths}")
             return None
         
         # If SVG support is available, convert to PNG temporarily
@@ -204,6 +221,9 @@ class PDFBuilder(FPDF):
             return
         
         # Logo in top left - smaller size
+        import logging
+        logger = logging.getLogger(__name__)
+        
         if self.logo_path and os.path.exists(self.logo_path):
             try:
                 # Logo dimensions - reduced size, use proper aspect ratio to avoid distortion
@@ -220,14 +240,17 @@ class PDFBuilder(FPDF):
                 y_pos = 8  # 8mm from top
                 
                 # Add logo (should be PNG if conversion worked, or SVG as fallback)
+                logger.debug(f"Adding logo to header from: {self.logo_path}")
                 self.image(self.logo_path, x=x_pos, y=y_pos, w=logo_width, h=logo_height)
                 
                 # Adjust text position to be after logo
                 text_x = x_pos + logo_width + 5  # 5mm spacing after logo
-            except Exception:
+            except Exception as e:
+                logger.warning(f"Failed to add logo to header: {e}", exc_info=True)
                 # If logo fails, just continue without it
                 text_x = 15
         else:
+            logger.warning(f"Logo path not available for header: {self.logo_path}")
             text_x = 15
         
         # Add patient info (sex and birthdate) on the right side - multiline, left-aligned
@@ -302,6 +325,9 @@ class PDFBuilder(FPDF):
         self.rect(0, page_height*0.618, page_width , page_height , 'F')
         
         # Logo placement - top left, smaller size
+        import logging
+        logger = logging.getLogger(__name__)
+        
         if self.logo_path and os.path.exists(self.logo_path):
             try:
                 # Smaller logo for cover page
@@ -318,15 +344,19 @@ class PDFBuilder(FPDF):
                 logo_y = 30  # 30mm from top
                 
                 # Add logo
+                logger.info(f"Adding logo to cover page from: {self.logo_path}")
                 self.image(self.logo_path, x=logo_x, y=logo_y, w=logo_width, h=logo_height)
+                logger.info(f"Logo added successfully to cover page at ({logo_x}, {logo_y})")
                 
                 # Add subtle line below logo for separation
                 # self.set_draw_color(*self.gray)
                 # self.set_line_width(0.3)
                 # line_y = logo_y + logo_height + 8
                 # self.line(logo_x, line_y, logo_x + logo_width, line_y)
-            except Exception:
-                pass  # Continue without logo if it fails
+            except Exception as e:
+                logger.error(f"Failed to add logo to cover page: {e}", exc_info=True)
+        else:
+            logger.warning(f"Logo path not available for cover page: {self.logo_path}")
         
         # Main title - positioned asymmetrically, not centered
         self.set_text_color(*self.blue_accent)

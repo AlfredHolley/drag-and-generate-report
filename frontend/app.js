@@ -619,11 +619,8 @@ if (document.readyState === 'loading') {
     initializeElements();
 }
 
-// Set logo source (served as static file from frontend)
-const footerLogo = document.getElementById('footerLogo');
-if (footerLogo) {
-    footerLogo.src = './logo_bw.svg';
-}
+// Logo is already set in HTML, no need to set it here
+// If logo fails to load, the onerror handler in HTML will hide it
 
 // Health check
 checkHealth();
