@@ -4,6 +4,7 @@ import json
 import os
 import re
 import unicodedata
+import logging
 
 class CSVParser:
     """Parse CSV files with medical data structure"""
@@ -207,17 +208,62 @@ class CSVParser:
     
     def parse(self, filepath):
         """Parse CSV file and extract structured data"""
-        # Read CSV without header to preserve structure
-        df = pd.read_csv(filepath, header=None, encoding='utf-8')
-        if df is None or df.empty:
+        logger = logging.getLogger(__name__)
+
+        # Read CSV without header to preserve structure.
+        # In production we frequently get delimiter/encoding variations (',' vs ';', UTF-8 vs Latin-1).
+        # If pandas reads everything into one column, date detection will fail -> intermittent 400s.
+        def _try_read(enc: str, sep):
+            try:
+                return pd.read_csv(
+                    filepath,
+                    header=None,
+                    encoding=enc,
+                    sep=sep,
+                    engine="python",
+                    dtype=str,
+                    keep_default_na=False,
+                )
+            except Exception:
+                return None
+
+        # Try best-effort combinations; pick the one that yields the most columns and can detect dates.
+        candidates = []
+        for enc in ("utf-8-sig", "utf-8", "latin1"):
+            # sep=None lets python engine sniff delimiter
+            for sep in (None, ",", ";", "\t"):
+                df_try = _try_read(enc, sep)
+                if df_try is None or df_try.empty:
+                    continue
+                # Normalize empty strings to 'nan'-like checks downstream
+                # (we already keep_default_na=False, so empties stay as "")
+                date_cols_try, date_row_try = self._extract_date_columns(df_try)
+                score = (df_try.shape[1], len(date_cols_try), 1 if date_row_try is not None else 0)
+                candidates.append((score, enc, sep, df_try, date_cols_try, date_row_try))
+
+        if not candidates:
             return {'categories': [], 'date_columns': []}
+
+        # Prefer: more columns, more detected date columns, and a detected date row
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        best_score, best_enc, best_sep, df, date_cols, date_row_idx = candidates[0]
+
+        logger.info(
+            f"CSV read: shape={df.shape}, encoding={best_enc}, sep={best_sep}, "
+            f"date_row_idx={date_row_idx}, date_cols={len(date_cols)}"
+        )
         
         # Extract date columns
-        date_cols, date_row_idx = self._extract_date_columns(df)
         header_row_idx = self._find_header_row_idx(df)
 
         # If we couldn't find a date row, we can't build the report safely
         if not date_cols or date_row_idx is None:
+            # Log a small sample to help debug production uploads without dumping the whole file
+            try:
+                sample = df.head(6).to_string(index=False, header=False)
+                logger.warning(f"Date detection failed. CSV head(6):\n{sample}")
+            except Exception:
+                pass
             raise ValueError("Could not detect the date row/columns in the CSV. Please verify the export format.")
         
         # Find unit column by looking for "Unidad" in header row (row 2, index 2)
