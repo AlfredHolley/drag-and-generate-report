@@ -11,6 +11,11 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     zlib1g-dev \
     libpng-dev \
+    libcairo2-dev \
+    libgirepository1.0-dev \
+    libpango1.0-dev \
+    libgdk-pixbuf2.0-dev \
+    pkg-config \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -20,8 +25,12 @@ RUN pip install --upgrade pip setuptools wheel
 # Copy requirements first for better caching
 COPY backend/requirements.txt /app/requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies (core packages first)
+RUN pip install --no-cache-dir Flask flask-cors pandas fpdf2 reportlab numpy werkzeug Pillow gunicorn
+
+# Try to install svglib separately (optional, for SVG logo support)
+# This may fail if pycairo dependencies are missing, but the app will still work
+RUN pip install --no-cache-dir svglib>=1.5.1 || echo "Warning: svglib installation failed, SVG logo support will be disabled"
 
 # Copy backend code
 COPY backend/ /app/
