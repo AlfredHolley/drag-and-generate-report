@@ -92,88 +92,94 @@ class PDFBuilder(FPDF):
     
     def _register_fonts(self):
         """Register custom fonts"""
-        fonts_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'fonts')
-        
-        # Debug: Log fonts directory
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"Fonts directory: {fonts_dir}")
-        logger.info(f"Fonts directory exists: {os.path.exists(fonts_dir)}")
-        if os.path.exists(fonts_dir):
-            try:
-                fonts_list = os.listdir(fonts_dir)
-                logger.info(f"Fonts in directory: {fonts_list}")
-            except Exception as e:
-                logger.error(f"Failed to list fonts directory: {e}")
+        
+        # Try multiple possible font paths (for Docker and local development)
+        possible_font_dirs = [
+            "/app/fonts",  # Docker container path
+            os.path.join(os.path.dirname(__file__), '..', '..', 'fonts'),  # Relative path
+            os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'fonts')),  # Absolute relative path
+        ]
+        
+        fonts_dir = None
+        for font_dir in possible_font_dirs:
+            if os.path.exists(font_dir) and os.path.exists(os.path.join(font_dir, 'VistaSansOT-Book.ttf')):
+                fonts_dir = font_dir
+                logger.info(f"Using fonts directory: {fonts_dir}")
+                break
+        
+        if not fonts_dir:
+            logger.error("Fonts directory not found in any of the expected locations")
+            logger.error(f"Tried: {possible_font_dirs}")
+            return
         
         # VistaSans fonts
         vista_book_path = os.path.join(fonts_dir, 'VistaSansOT-Book.ttf')
         vista_bold_path = os.path.join(fonts_dir, 'VistaSansOT-Bold.ttf')
         vista_italic_path = os.path.join(fonts_dir, 'VistaSansOT-BookItalic.ttf')
         
+        # Helper function to register fonts silently (ignore "already added" warnings)
+        def safe_add_font(name, style, path):
+            """Add font, ignoring 'already added' warnings"""
+            if not os.path.exists(path):
+                return False
+            try:
+                self.add_font(name, style, path)
+                return True
+            except (ValueError, RuntimeError) as e:
+                # Ignore "already added" warnings - this is expected behavior
+                if "already added" in str(e).lower() or "already registered" in str(e).lower():
+                    return True
+                logger.warning(f"Font registration warning for {name} {style}: {e}")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to register font {name} {style}: {e}")
+                return False
+        
         if os.path.exists(vista_book_path):
-            try:
-                # Register with original case
-                self.add_font("VistaSansOTBook", "", vista_book_path)
-                if os.path.exists(vista_bold_path):
-                    self.add_font("VistaSansOTBook", "B", vista_bold_path)
-                if os.path.exists(vista_italic_path):
-                    self.add_font("VistaSansOTBook", "I", vista_italic_path)
-                
-                # Also register lowercase version for compatibility (fpdf2 may normalize to lowercase)
-                self.add_font("vistasansotbook", "", vista_book_path)
-                if os.path.exists(vista_bold_path):
-                    self.add_font("vistasansotbook", "B", vista_bold_path)
-                if os.path.exists(vista_italic_path):
-                    self.add_font("vistasansotbook", "I", vista_italic_path)
-                
-                logger.info("VistaSansOTBook fonts registered successfully")
-            except Exception as e:
-                logger.error(f"Failed to register VistaSansOTBook fonts: {e}", exc_info=True)
-        else:
-            logger.warning(f"VistaSansOT-Book.ttf not found at {vista_book_path}")
-            # Try alternative path (absolute)
-            alt_path = "/app/fonts/VistaSansOT-Book.ttf"
-            if os.path.exists(alt_path):
-                logger.info(f"Found VistaSansOT-Book.ttf at alternative path: {alt_path}")
-                try:
-                    self.add_font("VistaSansOTBook", "", alt_path)
-                    self.add_font("vistasansotbook", "", alt_path)
-                    if os.path.exists("/app/fonts/VistaSansOT-Bold.ttf"):
-                        self.add_font("VistaSansOTBook", "B", "/app/fonts/VistaSansOT-Bold.ttf")
-                        self.add_font("vistasansotbook", "B", "/app/fonts/VistaSansOT-Bold.ttf")
-                    if os.path.exists("/app/fonts/VistaSansOT-BookItalic.ttf"):
-                        self.add_font("VistaSansOTBook", "I", "/app/fonts/VistaSansOT-BookItalic.ttf")
-                        self.add_font("vistasansotbook", "I", "/app/fonts/VistaSansOT-BookItalic.ttf")
-                except Exception as e:
-                    logger.error(f"Failed to register fonts from alternative path: {e}", exc_info=True)
+            # Register with original case
+            safe_add_font("VistaSansOTBook", "", vista_book_path)
+            if os.path.exists(vista_bold_path):
+                safe_add_font("VistaSansOTBook", "B", vista_bold_path)
+            if os.path.exists(vista_italic_path):
+                safe_add_font("VistaSansOTBook", "I", vista_italic_path)
+            
+            # Also register lowercase version for compatibility (fpdf2 may normalize to lowercase)
+            safe_add_font("vistasansotbook", "", vista_book_path)
+            if os.path.exists(vista_bold_path):
+                safe_add_font("vistasansotbook", "B", vista_bold_path)
+            if os.path.exists(vista_italic_path):
+                safe_add_font("vistasansotbook", "I", vista_italic_path)
+            
+            logger.info("VistaSansOTBook fonts registered successfully")
         
-        if os.path.exists(os.path.join(fonts_dir, 'VistaSansOT-Reg.ttf')):
-            try:
-                self.add_font("VistaSansReg", "", os.path.join(fonts_dir, 'VistaSansOT-Reg.ttf'))
-                self.add_font("vistasansreg", "", os.path.join(fonts_dir, 'VistaSansOT-Reg.ttf'))
-            except Exception as e:
-                logger.error(f"Failed to register VistaSansReg fonts: {e}")
+        # VistaSans Regular fonts
+        vista_reg_path = os.path.join(fonts_dir, 'VistaSansOT-Reg.ttf')
+        if os.path.exists(vista_reg_path):
+            safe_add_font("VistaSansReg", "", vista_reg_path)
+            safe_add_font("vistasansreg", "", vista_reg_path)
         
-        if os.path.exists(os.path.join(fonts_dir, 'VistaSansOT-Light.ttf')):
-            try:
-                self.add_font("vistaSansLight", "", os.path.join(fonts_dir, 'VistaSansOT-Light.ttf'))
-                self.add_font("vistaSansLight", "I", os.path.join(fonts_dir, 'VistaSansOT-LightItalic.ttf'))
-                self.add_font("vistasanslight", "", os.path.join(fonts_dir, 'VistaSansOT-Light.ttf'))
-                self.add_font("vistasanslight", "I", os.path.join(fonts_dir, 'VistaSansOT-LightItalic.ttf'))
-            except Exception as e:
-                logger.error(f"Failed to register vistaSansLight fonts: {e}")
+        # VistaSans Light fonts
+        vista_light_path = os.path.join(fonts_dir, 'VistaSansOT-Light.ttf')
+        vista_light_italic_path = os.path.join(fonts_dir, 'VistaSansOT-LightItalic.ttf')
+        if os.path.exists(vista_light_path):
+            safe_add_font("vistaSansLight", "", vista_light_path)
+            safe_add_font("vistasanslight", "", vista_light_path)
+            if os.path.exists(vista_light_italic_path):
+                safe_add_font("vistaSansLight", "I", vista_light_italic_path)
+                safe_add_font("vistasanslight", "I", vista_light_italic_path)
         
         # Calibri fonts
         calibri_path = os.path.join(fonts_dir, 'Calibri.ttf')
+        calibri_bold_path = os.path.join(fonts_dir, 'Calibri-Bold.ttf')
         if os.path.exists(calibri_path):
-            try:
-                self.add_font("Calibri", "", calibri_path)
-                self.add_font("Calibri", "B", os.path.join(fonts_dir, 'Calibri-Bold.ttf'))
-                self.add_font("calibri", "", calibri_path)
-                self.add_font("calibri", "B", os.path.join(fonts_dir, 'Calibri-Bold.ttf'))
-            except Exception as e:
-                logger.error(f"Failed to register Calibri fonts: {e}")
+            safe_add_font("Calibri", "", calibri_path)
+            safe_add_font("calibri", "", calibri_path)
+            if os.path.exists(calibri_bold_path):
+                safe_add_font("Calibri", "B", calibri_bold_path)
+                safe_add_font("calibri", "B", calibri_bold_path)
+            logger.info("Calibri fonts registered successfully")
         else:
             logger.warning(f"Calibri.ttf not found at {calibri_path}")
     
