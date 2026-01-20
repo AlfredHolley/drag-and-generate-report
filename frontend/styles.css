@@ -38,7 +38,7 @@ body {
 
 /* Header */
 .header {
-    background: black;
+    background: yellow;
     /* background: var(--black); */
     padding: 2rem 2rem;
     margin-bottom: 0;
