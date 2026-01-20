@@ -66,12 +66,11 @@ body {
 .main-content {
     flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     min-height: 400px;
-    padding: 0 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
+    padding: 0;
     width: 100%;
 }
 
@@ -151,7 +150,11 @@ body {
 /* Upload Section */
 .upload-section {
     width: 100%;
-    max-width: 600px;
+    max-width: 500px; 
+    margin: 4.5rem auto;
+    margin-top: 7rem;
+    margin-bottom: 7rem;
+    padding: 0 2rem;
 }
 
 .drop-zone {
@@ -222,6 +225,72 @@ body {
     font-size: 1rem;
     color: var(--gray);
     font-weight: 300;
+}
+
+/* Steps Section */
+.steps-section {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 3rem;
+    margin-top: 0;
+    padding: 3rem 2rem;
+    flex-wrap: nowrap;
+    background: #ecebe5;
+    width: 100%;
+}
+
+.step-item {
+    flex: 1;
+    min-width: 250px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.step-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    border: 2px solid var(--black);
+    border-radius: 50%;
+    background: var(--white);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.step-icon svg {
+    stroke: var(--black);
+    transition: stroke 0.3s;
+}
+
+.step-item:hover .step-icon {
+    background: var(--black);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.step-item:hover .step-icon svg {
+    stroke: var(--white);
+}
+
+.step-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+}
+
+.step-description {
+    font-size: 0.95rem;
+    color: var(--gray);
+    font-weight: 300;
+    line-height: 1.6;
 }
 
 /* Processing Section */
@@ -747,12 +816,13 @@ body {
 /* Footer */
 .footer {
     text-align: center;
-    padding: 2rem 0;
+    padding: 5rem 0;
     border-top: 1px solid var(--light-gray);
     margin-top: 4rem;
     display: flex;
     justify-content: center;
     align-items: center;
+    background: #282828;
 }
 
 .footer-logo {
@@ -783,6 +853,11 @@ body {
     }
     
     .main-content {
+        padding: 0;
+    }
+    
+    .upload-section {
+        margin: 4.5rem auto;
         padding: 0 1.5rem;
     }
     
@@ -792,6 +867,30 @@ body {
     
     .drop-title {
         font-size: 1.2rem;
+    }
+    
+    .steps-section {
+        flex-direction: column;
+        gap: 2rem;
+        margin-top: 0;
+        padding: 2rem 1rem;
+    }
+    
+    .step-item {
+        width: 100%;
+    }
+    
+    .step-icon {
+        width: 70px;
+        height: 70px;
+    }
+    
+    .step-title {
+        font-size: 1.1rem;
+    }
+    
+    .step-description {
+        font-size: 0.9rem;
     }
 }
 
