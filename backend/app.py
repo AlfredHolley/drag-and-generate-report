@@ -317,17 +317,7 @@ def mark_activity(file_id):
     except Exception as e:
         return jsonify({'error': f'Failed to mark activity: {str(e)}'}), 500
 
-@app.route('/logo_bw.svg', methods=['GET'])
-def serve_logo():
-    """Serve the Buchinger Wilhelmi logo"""
-    try:
-        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logo_bw.svg')
-        if os.path.exists(logo_path):
-            return send_file(logo_path, mimetype='image/svg+xml')
-        else:
-            return jsonify({'error': 'Logo not found'}), 404
-    except Exception as e:
-        return jsonify({'error': f'Error serving logo: {str(e)}'}), 500
+# Logo is now served as static file from frontend, no need for backend route
 
 @app.errorhandler(404)
 def not_found(error):

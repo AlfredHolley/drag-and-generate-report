@@ -619,12 +619,10 @@ if (document.readyState === 'loading') {
     initializeElements();
 }
 
-// Set logo source
+// Set logo source (served as static file from frontend)
 const footerLogo = document.getElementById('footerLogo');
 if (footerLogo) {
-    // Use API base URL to construct logo path
-    const apiBase = API_BASE_URL.replace('/api', '');
-    footerLogo.src = `${apiBase}/logo_bw.svg`;
+    footerLogo.src = './logo_bw.svg';
 }
 
 // Health check

@@ -26,19 +26,39 @@ class CSVParser:
     
     def _is_category_row(self, row):
         """Check if a row represents a category header"""
+        # Skip empty rows or rows with insufficient columns
+        if len(row) == 0:
+            return False
+        
         # Category rows have non-empty first column and mostly empty subsequent columns
-        first_col = str(row.iloc[0]).strip()
+        try:
+            first_col = str(row.iloc[0]).strip()
+        except (IndexError, KeyError):
+            return False
+        
         if not first_col or first_col == 'nan':
             return False
         
         # Check if first column is not empty and has few non-empty values in other columns
-        non_empty_count = sum(1 for val in row.iloc[1:] if pd.notna(val) and str(val).strip() and str(val).strip() != 'nan')
+        try:
+            non_empty_count = sum(1 for val in row.iloc[1:] if pd.notna(val) and str(val).strip() and str(val).strip() != 'nan')
+        except (IndexError, KeyError):
+            return False
+        
         return non_empty_count < 3  # Category rows have very few values
     
     def _is_parameter_row(self, row):
         """Check if a row represents a parameter"""
+        # Skip empty rows or rows with insufficient columns
+        if len(row) == 0:
+            return False
+        
         # Parameter rows start with empty first column (comma in CSV)
-        first_col = str(row.iloc[0]).strip()
+        try:
+            first_col = str(row.iloc[0]).strip()
+        except (IndexError, KeyError):
+            return False
+        
         return first_col == '' or first_col == 'nan'
     
     def _extract_date_columns(self, df):
@@ -98,9 +118,16 @@ class CSVParser:
         for idx in range(4, len(df)):
             row = df.iloc[idx]
             
+            # Skip empty rows
+            if len(row) == 0:
+                continue
+            
             # Check if it's a category row
             if self._is_category_row(row):
-                category_name_spanish = str(row.iloc[0]).strip()
+                try:
+                    category_name_spanish = str(row.iloc[0]).strip()
+                except (IndexError, KeyError):
+                    continue
                 # Map to English category name
                 category_name = self._map_category_to_english(category_name_spanish)
                 current_category = {
@@ -112,7 +139,10 @@ class CSVParser:
             
             # Check if it's a parameter row
             elif self._is_parameter_row(row) and current_category is not None:
-                param_name_spanish = str(row.iloc[1]).strip() if len(row) > 1 else ''
+                try:
+                    param_name_spanish = str(row.iloc[1]).strip() if len(row) > 1 else ''
+                except (IndexError, KeyError):
+                    continue
                 
                 if param_name_spanish and param_name_spanish != 'nan':
                     # Extract values for each date column
