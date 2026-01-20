@@ -74,30 +74,69 @@ class CSVParser:
             return [], None
 
         def _looks_like_date(s: str) -> bool:
-            if not s or s.lower() in ("nan", "none", "null"):
+            if not s or s.lower() in ("nan", "none", "null", ""):
                 return False
-            s = s.strip()
-            return ("/" in s) or ("." in s) or ("-" in s)
+            s = str(s).strip()
+            # Check for date patterns: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY, etc.
+            # Also accept 2-digit years: DD/MM/YY
+            if not s:
+                return False
+            # Must contain date separators
+            has_separator = ("/" in s) or ("." in s) or ("-" in s)
+            if not has_separator:
+                return False
+            # Check if it looks like a date format (has numbers)
+            has_numbers = any(c.isdigit() for c in s)
+            if not has_numbers:
+                return False
+            # Exclude common non-date patterns
+            s_lower = s.lower()
+            if any(x in s_lower for x in ["id", "analisis", "unidad", "unidad", "unit"]):
+                return False
+            return True
 
         best_row_idx = None
         best_score = 0
 
-        # Search the first 10 rows (or fewer) for a likely date row
-        max_scan = min(10, df.shape[0])
+        # Search the first 15 rows (or fewer) for a likely date row - increased from 10
+        max_scan = min(15, df.shape[0])
         for r in range(max_scan):
             try:
                 row = df.iloc[r]
             except (IndexError, KeyError):
                 continue
             score = 0
+            date_like_count = 0
             for c, v in enumerate(row):
                 if c <= 1:  # skip first two columns (empty + "Analisis")
                     continue
                 if _looks_like_date(str(v)):
+                    date_like_count += 1
                     score += 1
-            if score > best_score:
+            # Also check if this row has a reasonable number of date-like values
+            # (at least 2 to be considered a date row)
+            if date_like_count >= 2 and score > best_score:
                 best_score = score
                 best_row_idx = r
+
+        # If we still haven't found a good date row, try a more lenient approach
+        # Look for any row with at least 1 date-like value (might be a file with few dates)
+        if best_row_idx is None or best_score == 0:
+            for r in range(max_scan):
+                try:
+                    row = df.iloc[r]
+                except (IndexError, KeyError):
+                    continue
+                score = 0
+                for c, v in enumerate(row):
+                    if c <= 1:
+                        continue
+                    if _looks_like_date(str(v)):
+                        score += 1
+                if score >= 1:  # At least 1 date found
+                    best_score = score
+                    best_row_idx = r
+                    break
 
         if best_row_idx is None or best_score == 0:
             return [], None
@@ -106,11 +145,32 @@ class CSVParser:
         date_columns = []
 
         # Unit column is usually the last non-empty header column, but dates row often ends with empty.
-        unit_col_guess = df.shape[1] - 1
+        # Try to detect it more intelligently
+        unit_col_guess = None
+        # Check if last column looks like units (contains common unit words)
+        if df.shape[1] > 0:
+            last_col_idx = df.shape[1] - 1
+            # Check header row for "Unidad"
+            header_row_idx = self._find_header_row_idx(df)
+            if header_row_idx is not None:
+                try:
+                    header_row = df.iloc[header_row_idx]
+                    for idx, val in enumerate(header_row):
+                        val_str = str(val).strip().upper()
+                        if 'UNIDAD' in val_str:
+                            unit_col_guess = idx
+                            break
+                except (IndexError, KeyError):
+                    pass
+        
+        if unit_col_guess is None:
+            unit_col_guess = df.shape[1] - 1
 
         for idx, val in enumerate(date_row):
             # Skip first two columns (empty + "Analisis") and likely unit column
-            if idx <= 1 or idx == unit_col_guess:
+            if idx <= 1:
+                continue
+            if unit_col_guess is not None and idx == unit_col_guess:
                 continue
 
             val_str = str(val).strip()
