@@ -27,8 +27,51 @@ jobs:
           ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
               -p ${{ secrets.VPS_PORT || 22 }} \
-              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-              "cd ${{ secrets.VPS_PROJECT_PATH }} && bash scripts/update.sh"
+              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+            set -e
+            
+            PROJECT_PATH="${{ secrets.VPS_PROJECT_PATH }}"
+            echo "📂 Project path: $PROJECT_PATH"
+            
+            # Check if directory exists
+            if [ ! -d "$PROJECT_PATH" ]; then
+              echo "❌ Directory $PROJECT_PATH does not exist!"
+              echo "Please clone the repository first:"
+              echo "  git clone <your-repo-url> $PROJECT_PATH"
+              exit 1
+            fi
+            
+            cd "$PROJECT_PATH"
+            echo "📂 Current directory: $(pwd)"
+            
+            # Check if it's a git repository
+            if [ ! -d .git ]; then
+              echo "❌ Not a git repository! Please clone the repository first."
+              exit 1
+            fi
+            
+            # Check if update script exists
+            if [ ! -f scripts/update.sh ]; then
+              echo "⚠️  Script scripts/update.sh not found. Pulling latest changes..."
+              git fetch origin
+              git reset --hard origin/main || git reset --hard origin/master
+              
+              # Check again
+              if [ ! -f scripts/update.sh ]; then
+                echo "❌ Script scripts/update.sh still not found after git pull!"
+                echo "Available files in scripts/:"
+                ls -la scripts/ || echo "scripts/ directory does not exist"
+                exit 1
+              fi
+            fi
+            
+            # Make script executable
+            chmod +x scripts/update.sh
+            
+            # Run update script
+            echo "🚀 Running update script..."
+            bash scripts/update.sh
+          ENDSSH
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}

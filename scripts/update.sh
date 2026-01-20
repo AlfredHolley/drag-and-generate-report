@@ -18,7 +18,16 @@ echo "📂 Current directory: $(pwd)"
 # Pull latest changes from GitHub
 echo "📥 Pulling latest changes from GitHub..."
 git fetch origin
-git reset --hard origin/main  # ou origin/master selon votre branche principale
+
+# Try main branch first, fallback to master
+if git show-ref --verify --quiet refs/remotes/origin/main; then
+    git reset --hard origin/main
+elif git show-ref --verify --quiet refs/remotes/origin/master; then
+    git reset --hard origin/master
+else
+    echo "❌ Neither 'main' nor 'master' branch found!"
+    exit 1
+fi
 
 # Ensure .env exists (don't overwrite if it exists)
 if [ ! -f .env ]; then

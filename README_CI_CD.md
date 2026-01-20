@@ -72,6 +72,11 @@ Si la connexion fonctionne, vous pouvez continuer.
 cd /home/user  # ou votre répertoire préféré
 git clone <votre-repo-url> report-generator
 cd report-generator
+
+# OU si vous avez déjà cloné, assurez-vous d'être sur la bonne branche
+cd /path/to/report-generator
+git checkout main  # ou master
+git pull origin main  # ou master
 ```
 
 ### 2. Configurer le projet
@@ -142,23 +147,43 @@ git log --oneline -5
 1. **Vérifier les secrets GitHub** :
    - Assurez-vous que tous les secrets sont correctement configurés
    - Vérifiez qu'il n'y a pas d'espaces en début/fin de ligne dans les secrets
+   - Vérifiez que `VPS_PROJECT_PATH` correspond exactement au chemin sur le VPS
 
-2. **Vérifier la connexion SSH** :
+2. **Vérifier que le repository est cloné sur le VPS** :
+   ```bash
+   # Sur le VPS
+   cd $VPS_PROJECT_PATH  # ou le chemin que vous avez configuré
+   ls -la
+   # Vous devriez voir .git, backend/, frontend/, etc.
+   ```
+
+3. **Vérifier que le script existe** :
+   ```bash
+   # Sur le VPS
+   cd $VPS_PROJECT_PATH
+   ls -la scripts/update.sh
+   # Si le fichier n'existe pas, faites:
+   git pull origin main  # ou master
+   ```
+
+4. **Vérifier la connexion SSH** :
    ```bash
    # Tester depuis votre machine locale
    ssh -i ~/.ssh/github_deploy user@your-vps-ip
    ```
 
-3. **Vérifier les permissions** :
+5. **Vérifier les permissions** :
    ```bash
    # Sur le VPS
+   chmod +x scripts/update.sh
    ls -la scripts/update.sh
    # Doit être exécutable: -rwxr-xr-x
    ```
 
-4. **Vérifier le chemin du projet** :
+6. **Vérifier le chemin du projet** :
    ```bash
    # Sur le VPS, vérifier que le chemin dans VPS_PROJECT_PATH existe
+   echo $VPS_PROJECT_PATH
    ls -la $VPS_PROJECT_PATH
    ```
 
