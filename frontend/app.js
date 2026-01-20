@@ -1,4 +1,7 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+// Auto-detect API base URL (use relative path in production, localhost in development)
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000/api'
+    : '/api';
 
 // DOM Elements
 const dropZone = document.getElementById('dropZone');
@@ -22,6 +25,48 @@ let currentFileId = null;
 let doctorCommentsText = '';
 let patientMetadata = null;
 let uploadedFileId = null; // Store file ID after upload, before patient form submission
+let activityInterval = null; // Interval for activity tracking
+
+// Function to mark activity for a file
+async function markActivity(fileId) {
+    if (!fileId) return;
+    
+    try {
+        await fetch(`${API_BASE_URL}/activity/${fileId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+    } catch (error) {
+        // Silently fail - activity tracking is not critical
+        console.debug('Activity tracking failed:', error);
+    }
+}
+
+// Start activity tracking for a file
+function startActivityTracking(fileId) {
+    // Clear any existing interval
+    stopActivityTracking();
+    
+    if (!fileId) return;
+    
+    // Mark activity immediately
+    markActivity(fileId);
+    
+    // Then mark activity every 2 minutes (120000 ms)
+    activityInterval = setInterval(() => {
+        markActivity(fileId);
+    }, 120000); // 2 minutes
+}
+
+// Stop activity tracking
+function stopActivityTracking() {
+    if (activityInterval) {
+        clearInterval(activityInterval);
+        activityInterval = null;
+    }
+}
 
 // DOM Elements for patient form modal
 let patientModalOverlay = null;
@@ -310,7 +355,11 @@ async function processFile(fileId, comments = '') {
             throw new Error('Invalid response from server');
         }
         
+        currentFileId = data.file_id;
         progressFill.style.width = '100%';
+        
+        // Start activity tracking
+        startActivityTracking(currentFileId);
         
         // Wait a bit for visual feedback
         setTimeout(() => {
@@ -397,6 +446,11 @@ function openModal() {
         }
     }
     
+    // Mark activity when previewing
+    if (currentFileId) {
+        markActivity(currentFileId);
+    }
+    
     const previewUrl = `${API_BASE_URL}/preview/${currentFileId}`;
     console.log('Loading PDF preview from:', previewUrl);
     
@@ -422,6 +476,9 @@ function handleDownload() {
         showError('No file available for download.');
         return;
     }
+    
+    // Stop activity tracking - file will be deleted after download
+    stopActivityTracking();
     
     // Update comments if changed before download
     if (doctorComments.value.trim() !== doctorCommentsText) {
@@ -508,6 +565,8 @@ function handlePatientFormSubmit(e) {
     // Process file with patient metadata
     if (uploadedFileId) {
         currentFileId = uploadedFileId;
+        // Mark activity for uploaded file
+        markActivity(uploadedFileId);
         showSection('processing');
         progressFill.style.width = '60%';
         processFile(currentFileId);
@@ -517,6 +576,9 @@ function handlePatientFormSubmit(e) {
 }
 
 function resetUI() {
+    // Stop activity tracking
+    stopActivityTracking();
+    
     currentFileId = null;
     uploadedFileId = null;
     doctorCommentsText = '';

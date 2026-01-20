@@ -6,6 +6,7 @@ import uuid
 import tempfile
 from werkzeug.utils import secure_filename
 import json
+import time
 
 # Add backend directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -14,13 +15,55 @@ app = Flask(__name__)
 CORS(app)
 
 # Configuration
-UPLOAD_FOLDER = 'uploads'
-OUTPUT_FOLDER = 'outputs'
+UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'uploads')
+OUTPUT_FOLDER = os.environ.get('OUTPUT_FOLDER', 'outputs')
 ALLOWED_EXTENSIONS = {'csv'}
+CLEANUP_TIMEOUT = int(os.environ.get('FILE_TIMEOUT', '600'))  # 10 minutes par défaut
+CLEANUP_INTERVAL = int(os.environ.get('CLEANUP_INTERVAL', '60'))  # 1 minute par défaut
 
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# Initialize cleanup service
+try:
+    from cleanup_service import CleanupService
+    cleanup_service = CleanupService(
+        upload_folder=UPLOAD_FOLDER,
+        output_folder=OUTPUT_FOLDER,
+        timeout_seconds=CLEANUP_TIMEOUT,
+        check_interval=CLEANUP_INTERVAL
+    )
+    cleanup_service.start()
+except ImportError:
+    cleanup_service = None
+    print("Warning: Cleanup service not available")
+
+def _get_activity_file(filepath):
+    """Retourne le chemin du fichier d'activité associé."""
+    return f"{filepath}.activity"
+
+def _update_activity(filepath):
+    """Met à jour le timestamp d'activité d'un fichier."""
+    activity_file = _get_activity_file(filepath)
+    try:
+        with open(activity_file, 'w') as f:
+            f.write(str(time.time()))
+    except IOError:
+        pass
+
+def _delete_file_safe(filepath):
+    """Supprime un fichier de manière sécurisée."""
+    try:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        activity_file = _get_activity_file(filepath)
+        if os.path.exists(activity_file):
+            os.remove(activity_file)
+        return True
+    except Exception as e:
+        print(f"Error deleting {filepath}: {e}")
+        return False
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -53,6 +96,8 @@ def upload_file():
         
         try:
             file.save(filepath)
+            # Mark initial activity
+            _update_activity(filepath)
         except Exception as e:
             return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
         
@@ -155,6 +200,15 @@ def process_file():
             
             if not os.path.exists(output_path):
                 return jsonify({'error': 'PDF generation failed. Output file not created.'}), 500
+            
+            # Mark activity for PDF
+            _update_activity(output_path)
+            
+            # Delete uploaded CSV file after successful PDF generation
+            try:
+                _delete_file_safe(uploaded_file)
+            except Exception as e:
+                print(f"Warning: Could not delete uploaded file {uploaded_file}: {e}")
         except Exception as e:
             return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
         
@@ -180,6 +234,9 @@ def preview_file(file_id):
         if not os.path.exists(filepath):
             return jsonify({'error': 'PDF not found. It may have expired or been deleted.'}), 404
         
+        # Mark activity
+        _update_activity(filepath)
+        
         return send_file(filepath, mimetype='application/pdf')
     except Exception as e:
         return jsonify({'error': f'Preview failed: {str(e)}'}), 500
@@ -197,7 +254,16 @@ def download_file(file_id):
         if not os.path.exists(filepath):
             return jsonify({'error': 'PDF not found. It may have expired or been deleted.'}), 404
         
-        return send_file(filepath, as_attachment=True, download_name='report.pdf')
+        # Send file
+        response = send_file(filepath, as_attachment=True, download_name='report.pdf')
+        
+        # Delete PDF after download
+        try:
+            _delete_file_safe(filepath)
+        except Exception as e:
+            print(f"Warning: Could not delete PDF file {filepath}: {e}")
+        
+        return response
     except Exception as e:
         return jsonify({'error': f'Download failed: {str(e)}'}), 500
 
@@ -219,6 +285,37 @@ def root():
 def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'ok'}), 200
+
+@app.route('/api/activity/<file_id>', methods=['POST'])
+def mark_activity(file_id):
+    """Mark activity for a file to prevent cleanup"""
+    try:
+        if not file_id or len(file_id) < 10:
+            return jsonify({'error': 'Invalid file ID'}), 400
+        
+        # Try to find and mark activity for upload file
+        uploaded_file = None
+        for filename in os.listdir(UPLOAD_FOLDER):
+            if filename.startswith(file_id) and not filename.endswith('.activity'):
+                uploaded_file = os.path.join(UPLOAD_FOLDER, filename)
+                break
+        
+        if uploaded_file and os.path.exists(uploaded_file):
+            _update_activity(uploaded_file)
+        
+        # Try to find and mark activity for output file
+        output_file = os.path.join(OUTPUT_FOLDER, f"{file_id}_report.pdf")
+        if os.path.exists(output_file):
+            _update_activity(output_file)
+        
+        # Also use cleanup service if available
+        if cleanup_service:
+            cleanup_service.mark_activity(file_id, 'upload')
+            cleanup_service.mark_activity(file_id, 'output')
+        
+        return jsonify({'status': 'ok', 'message': 'Activity marked'}), 200
+    except Exception as e:
+        return jsonify({'error': f'Failed to mark activity: {str(e)}'}), 500
 
 @app.route('/logo_bw.svg', methods=['GET'])
 def serve_logo():
@@ -249,6 +346,11 @@ def not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
+
+# Cleanup on shutdown
+import atexit
+if cleanup_service:
+    atexit.register(cleanup_service.stop)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
