@@ -86,23 +86,68 @@ class CSVParser:
             if not s or s.lower() in ("nan", "none", "null", ""):
                 return False
             s = str(s).strip()
-            # Check for date patterns: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY, etc.
-            # Also accept 2-digit years: DD/MM/YY
             if not s:
                 return False
+            
+            # Exclude common non-date patterns first
+            s_lower = s.lower()
+            if any(x in s_lower for x in ["id", "analisis", "unidad", "unit"]):
+                return False
+            
             # Must contain date separators
             has_separator = ("/" in s) or ("." in s) or ("-" in s)
             if not has_separator:
                 return False
+            
             # Check if it looks like a date format (has numbers)
             has_numbers = any(c.isdigit() for c in s)
             if not has_numbers:
                 return False
-            # Exclude common non-date patterns
-            s_lower = s.lower()
-            if any(x in s_lower for x in ["id", "analisis", "unidad", "unidad", "unit"]):
-                return False
-            return True
+            
+            # IMPORTANT: Exclude pure decimal numbers (e.g., "4.82", "14.7", "44.9")
+            # These are NOT dates even though they have separators
+            # A date should have at least 2 separators (DD/MM/YYYY) or be in a recognizable date format
+            separator_count = s.count("/") + s.count(".") + s.count("-")
+            
+            # If only one separator, check if it's a date-like pattern
+            # Dates typically have: DD/MM/YYYY (2 separators) or DD-MM-YY (2 separators)
+            # Pure decimals like "4.82" have only 1 separator
+            if separator_count == 1:
+                # Check if it's a decimal number (has digits before and after separator)
+                import re
+                # Pattern: digits.separator.digits (decimal number)
+                if re.match(r'^\d+[./-]\d+$', s):
+                    # This looks like a decimal, not a date
+                    return False
+                # If it's like "01/10" (day/month without year), it might still be a date
+                # But we'll be conservative and require at least 2 separators for dates
+            
+            # Try to parse as date to validate format
+            # Check if it matches common date patterns: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY
+            import re
+            date_patterns = [
+                r'^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$',  # DD/MM/YYYY or DD-MM-YYYY
+                r'^\d{1,2}\.\d{1,2}\.\d{2,4}$',      # DD.MM.YYYY
+            ]
+            for pattern in date_patterns:
+                if re.match(pattern, s):
+                    # Additional validation: check if parts make sense as date
+                    parts = re.split(r'[/.\-]', s)
+                    if len(parts) >= 2:
+                        try:
+                            part1 = int(parts[0])
+                            part2 = int(parts[1])
+                            # Day should be 1-31, month should be 1-12
+                            if (1 <= part1 <= 31 and 1 <= part2 <= 12) or (1 <= part2 <= 31 and 1 <= part1 <= 12):
+                                return True
+                        except ValueError:
+                            pass
+            
+            # If we have 2+ separators and it looks date-like, accept it
+            if separator_count >= 2:
+                return True
+            
+            return False
 
         best_row_idx = None
         best_score = 0
