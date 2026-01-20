@@ -31,9 +31,26 @@ fi
 
 # Ensure .env exists (don't overwrite if it exists)
 if [ ! -f .env ]; then
-    echo "📝 Creating .env file from .env.example..."
-    cp .env.example .env
-    echo "⚠️  WARNING: .env file was created from template. Please configure it!"
+    if [ -f .env.example ]; then
+        echo "📝 Creating .env file from .env.example..."
+        cp .env.example .env
+        echo "⚠️  WARNING: .env file was created from template. Please configure it!"
+    else
+        echo "⚠️  WARNING: .env.example not found. Creating minimal .env file..."
+        cat > .env << 'EOF'
+# Flask Configuration
+FLASK_ENV=production
+
+# File Storage Paths
+UPLOAD_FOLDER=/app/uploads
+OUTPUT_FOLDER=/app/outputs
+
+# Cleanup Service Configuration
+CLEANUP_INTERVAL=60
+FILE_TIMEOUT=600
+EOF
+        echo "⚠️  WARNING: Minimal .env file created. Please configure it according to your needs!"
+    fi
 fi
 
 # Ensure directories exist
