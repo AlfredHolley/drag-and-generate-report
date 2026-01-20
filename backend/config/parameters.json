@@ -1,0 +1,1274 @@
+{
+  "% Testosterona Libre A": {
+    "category": "",
+    "english_name": "% Testosterona Libre A",
+    "explanation": "",
+    "unit": ""
+  },
+  "17 beta Estradiol": {
+    "category": "",
+    "english_name": "17 beta Estradiol",
+    "explanation": "",
+    "unit": ""
+  },
+  "17 beta Estradiol ultrasensible": {
+    "category": "",
+    "english_name": "17 beta Estradiol high‑sensitivity",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Endomisio IgA": {
+    "category": "",
+    "english_name": "Antibody Endomisio IgA",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Endomisio IgG": {
+    "category": "",
+    "english_name": "Antibody Endomisio IgG",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Epstein Barr VCA IgG (ABBOTT)": {
+    "category": "",
+    "english_name": "Antibody Epstein Barr VCA IgG (ABBOTT)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Epstein Barr VCA IgM (Abbott)": {
+    "category": "",
+    "english_name": "Antibody Epstein Barr VCA IgM (Abbott)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac HIV 1 + HIV 2 + Ag p24": {
+    "category": "",
+    "english_name": "Antibody HIV 1 + HIV 2 + Ag p24",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Helicobacter pylori IgG BARCELONA": {
+    "category": "",
+    "english_name": "Antibody Helicobacter pylori IgG BARCELONA",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Hepatitis B core (ABBOTT)": {
+    "category": "",
+    "english_name": "Antibody Hepatitis B core (ABBOTT)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Hepatitis B superficie": {
+    "category": "",
+    "english_name": "Antibody Hepatitis B superficie",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Hepatitis C": {
+    "category": "",
+    "english_name": "Antibody Hepatitis C",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac IgG Citomegalovirus DIASORIN": {
+    "category": "",
+    "english_name": "Antibody IgG Citomegalovirus DIASORIN",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac IgM Citomegalovirus DIASORIN": {
+    "category": "",
+    "english_name": "Antibody IgM Citomegalovirus DIASORIN",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Insulina": {
+    "category": "",
+    "english_name": "Antibody Insulina",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac LDL oxidada": {
+    "category": "",
+    "english_name": "Antibody LDL oxidada",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Nucleares (ANAs)": {
+    "category": "",
+    "english_name": "Antibody Nucleares (ANAs)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Nucleares (ANAs) Patrón": {
+    "category": "",
+    "english_name": "Antibody Nucleares (ANAs) Patrón",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Parvovirus B 19 IgG": {
+    "category": "",
+    "english_name": "Antibody Parvovirus B 19 IgG",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Parvovirus B 19 IgM": {
+    "category": "",
+    "english_name": "Antibody Parvovirus B 19 IgM",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Peroxidasa (TPO)/Microsomales (ABBOTT)": {
+    "category": "",
+    "english_name": "Antibody Peroxidasa (TPO)/Microsomales (ABBOTT)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Rubeola IgG (DIASORIN)": {
+    "category": "",
+    "english_name": "Antibody Rubeola IgG (DIASORIN)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Rubeola IgM (DIASORIN)": {
+    "category": "",
+    "english_name": "Antibody Rubeola IgM (DIASORIN)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac SARS-CoV-2 IgG (Abbott) (en BAU/mL)": {
+    "category": "",
+    "english_name": "Antibody SARS-CoV-2 IgG (Abbott) (en BAU/mL)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac SARS-CoV-2 IgG nucleocápside (Abbott)": {
+    "category": "",
+    "english_name": "Antibody SARS-CoV-2 IgG nucleocápside (Abbott)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac SARS-CoV-2 IgM (Abbott)": {
+    "category": "",
+    "english_name": "Antibody SARS-CoV-2 IgM (Abbott)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac SARS-CoV-2 IgM (CLIA Diasorin)": {
+    "category": "",
+    "english_name": "Antibody SARS-CoV-2 IgM (CLIA Diasorin)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Tiroglobulina (ABBOTT)": {
+    "category": "",
+    "english_name": "Antibody Tiroglobulina (ABBOTT)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Transglutaminasa IgA": {
+    "category": "",
+    "english_name": "Antibody Transglutaminasa IgA",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Transglutaminasa IgG": {
+    "category": "",
+    "english_name": "Antibody Transglutaminasa IgG",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Treponema pallidum (TPHA)": {
+    "category": "",
+    "english_name": "Antibody Treponema pallidum (TPHA)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac Treponema pallidum screening": {
+    "category": "",
+    "english_name": "Antibody Treponema pallidum screening",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac gliadina deaminada IgA": {
+    "category": "",
+    "english_name": "Antibody gliadina deaminada IgA",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac gliadina deaminada IgG": {
+    "category": "",
+    "english_name": "Antibody gliadina deaminada IgG",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ac. frente al receptor de TSH (TRAb)": {
+    "category": "",
+    "english_name": "Antibody frente al receptor de TSH (TRAb)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Actividad de Protrombina": {
+    "category": "",
+    "english_name": "Prothrombin Activity",
+    "explanation": "",
+    "unit": ""
+  },
+  "Adiponectina": {
+    "category": "",
+    "english_name": "Adiponectina",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ag de superficie de Hepatitis B (ABBOTT)": {
+    "category": "",
+    "english_name": "Ag de superficie de Hepatitis B (ABBOTT)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Alanina aminotransferasa (ALT/GPT)": {
+    "category": "Liver Function",
+    "english_name": "Alanine Aminotransferase (ALT)",
+    "explanation": "ALT is a liver enzyme. Elevated levels may indicate liver damage or disease.",
+    "unit": "U/L"
+  },
+  "Albúmina": {
+    "category": "Proteins",
+    "english_name": "Albumin",
+    "explanation": "",
+    "unit": ""
+  },
+  "Alfa-linolénico(c18:3n3)esencial en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Alpha-linolenic Acid (C18:3n3) Essential (serum)",
+    "explanation": "An essential omega-3 fatty acid that must be obtained from the diet. It is a precursor to EPA and DHA and is found in flaxseeds, walnuts, and chia seeds.",
+    "unit": "µg/mL"
+  },
+  "Androstendiona delta 4 (Diasorin)": {
+    "category": "",
+    "english_name": "Androstendiona delta 4 (Diasorin)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Apolipoproteína A1": {
+    "category": "",
+    "english_name": "Apolipoproteina A1",
+    "explanation": "",
+    "unit": ""
+  },
+  "Apolipoproteína B": {
+    "category": "",
+    "english_name": "Apolipoproteina B",
+    "explanation": "",
+    "unit": ""
+  },
+  "Araquidónico (c20:4n6) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Arachidonic Acid (C20:4n6) (serum)",
+    "explanation": "An omega-6 polyunsaturated fatty acid that serves as a precursor to pro-inflammatory eicosanoids. Balance with omega-3 fatty acids is important for optimal health.",
+    "unit": "µg/mL"
+  },
+  "Aspartato aminotransferasa (AST/GOT)": {
+    "category": "Liver Function",
+    "english_name": "Aspartate Aminotransferase (AST)",
+    "explanation": "AST is an enzyme found in the liver, heart, and muscles. Elevated levels can indicate damage to these tissues.",
+    "unit": "U/L"
+  },
+  "Basófilos": {
+    "category": "",
+    "english_name": "Basophils",
+    "explanation": "",
+    "unit": ""
+  },
+  "Basófilos %": {
+    "category": "",
+    "english_name": "Basophils (%)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Beta Cross laps (CTX) Telopéptido C-terminal": {
+    "category": "",
+    "english_name": "Beta Cross laps (CTX) Telopeptido C-terminal",
+    "explanation": "",
+    "unit": ""
+  },
+  "Bilirrubina directa (conjugada)": {
+    "category": "",
+    "english_name": "Direct Bilirubin (conjugated)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Bilirrubina indirecta": {
+    "category": "",
+    "english_name": "Indirect Bilirubin",
+    "explanation": "",
+    "unit": ""
+  },
+  "Bilirrubina total": {
+    "category": "Liver Function",
+    "english_name": "Total Bilirubin",
+    "explanation": "",
+    "unit": ""
+  },
+  "CHCM": {
+    "category": "",
+    "english_name": "CHCM",
+    "explanation": "",
+    "unit": ""
+  },
+  "Calcio iónico": {
+    "category": "Phosphocalcic Metabolism",
+    "english_name": "Ionized Calcium",
+    "explanation": "",
+    "unit": ""
+  },
+  "Calcio total": {
+    "category": "Phosphocalcic Metabolism",
+    "english_name": "Total Calcium",
+    "explanation": "",
+    "unit": ""
+  },
+  "Capacid total de fijación del hierro": {
+    "category": "Iron Metabolism",
+    "english_name": "Total Iron Binding Capacity",
+    "explanation": "",
+    "unit": ""
+  },
+  "Carnitina libre": {
+    "category": "",
+    "english_name": "Carnitina free",
+    "explanation": "",
+    "unit": ""
+  },
+  "Carnitina total": {
+    "category": "",
+    "english_name": "Carnitina total",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ceruloplasmina": {
+    "category": "",
+    "english_name": "Ceruloplasmina",
+    "explanation": "",
+    "unit": ""
+  },
+  "Cloruro": {
+    "category": "",
+    "english_name": "Chloride",
+    "explanation": "",
+    "unit": ""
+  },
+  "Cobre en suero (ICP-MS)": {
+    "category": "",
+    "english_name": "Copper (serum) (ICP-MS)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Cociente n6/n3 en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Omega-6/Omega-3 Ratio (serum)",
+    "explanation": "The ratio of omega-6 to omega-3 fatty acids. An optimal ratio (typically 4:1 or lower) is important for reducing inflammation and promoting cardiovascular health. Modern diets often have ratios that are too high.",
+    "unit": ""
+  },
+  "Coenzima Q10": {
+    "category": "",
+    "english_name": "Coenzima Q10",
+    "explanation": "",
+    "unit": ""
+  },
+  "Colesterol HDL": {
+    "category": "Lipid Metabolism",
+    "english_name": "HDL Cholesterol",
+    "explanation": "High-density lipoprotein (HDL) cholesterol is often called 'good cholesterol' as it helps remove other forms of cholesterol from the bloodstream.",
+    "unit": "mg/dL"
+  },
+  "Colesterol LDL": {
+    "category": "Lipid Metabolism",
+    "english_name": "LDL Cholesterol",
+    "explanation": "Recommended LDL Cholesterol values according to the patient's cardiovascular risk:\n- Secondary prevention and very high CVR: < 55 mg/dL\n- High CVR: < 70 mg/dL\n- Moderate CVR: < 100 mg/dL\n- Low CVR: < 116 mg/dL",
+    "unit": "mg/dL"
+  },
+  "Colesterol total": {
+    "category": "Lipid Metabolism",
+    "english_name": "Total Cholesterol",
+    "explanation": "Total cholesterol includes all forms of cholesterol in the blood. It's a key marker for cardiovascular risk assessment.",
+    "unit": "mg/dL"
+  },
+  "Corticotropina (ACTH) en plasma": {
+    "category": "",
+    "english_name": "Corticotropina (ACTH) en plasma",
+    "explanation": "",
+    "unit": ""
+  },
+  "Cortisol": {
+    "category": "Endocrinology",
+    "english_name": "Cortisol",
+    "explanation": "Cortisol is a stress hormone that regulates metabolism, immune response, and blood pressure. Levels vary throughout the day.",
+    "unit": "µg/dL"
+  },
+  "Creatinina": {
+    "category": "Renal Function",
+    "english_name": "Creatinine",
+    "explanation": "Creatinine is a waste product from muscle metabolism. Blood levels reflect kidney function, as the kidneys filter creatinine from the blood.",
+    "unit": "mg/dL"
+  },
+  "Cromo en suero": {
+    "category": "",
+    "english_name": "Chromium (serum)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Cuerpos cetónicos en orina": {
+    "category": "",
+    "english_name": "Urine Ketone Bodies",
+    "explanation": "",
+    "unit": ""
+  },
+  "Dehidroepiandrosterona sulfato (DHEA-S)": {
+    "category": "",
+    "english_name": "Dehidroepiandrosterona sulfato (DHEA-S)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Densidad en orina": {
+    "category": "",
+    "english_name": "Urine Specific Gravity",
+    "explanation": "",
+    "unit": ""
+  },
+  "Detección de ARN de SARS-CoV-2 (MDX diasorin)": {
+    "category": "",
+    "english_name": "Deteccion de ARN de SARS-CoV-2 (MDX diasorin)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Detección de ARN de SARS-CoV-2 (monogénica)": {
+    "category": "",
+    "english_name": "Deteccion de ARN de SARS-CoV-2 (monogenica)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Detección de ARN de SARS-CoV-2 (monogénica) en enjuague bucal": {
+    "category": "",
+    "english_name": "Deteccion de ARN de SARS-CoV-2 (monogenica) en enjuague bucal",
+    "explanation": "",
+    "unit": ""
+  },
+  "Detección de ARN de SARS-CoV-2 (nasofaríngeo)": {
+    "category": "",
+    "english_name": "Deteccion de ARN de SARS-CoV-2 (nasofaringeo)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Detección del valor Ct:": {
+    "category": "",
+    "english_name": "Deteccion del valor Ct:",
+    "explanation": "",
+    "unit": ""
+  },
+  "Dihidrotestosterona (POR EIA)": {
+    "category": "",
+    "english_name": "Dihidrotestosterona (POR EIA)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Dihomo-gamma-linolénico(c20:3n6) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Dihomo-gamma-linolenic Acid (C20:3n6) (serum)",
+    "explanation": "An omega-6 fatty acid derived from gamma-linolenic acid. It serves as a precursor to anti-inflammatory eicosanoids and may have beneficial effects on inflammation.",
+    "unit": "µg/mL"
+  },
+  "Docosahexaenoico (c22:6n3) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Docosahexaenoic Acid (DHA, C22:6n3) (serum)",
+    "explanation": "An omega-3 fatty acid essential for brain health, eye function, and cardiovascular health. DHA is a key component of cell membranes, particularly in the brain and retina.",
+    "unit": "µg/mL"
+  },
+  "Dímero D": {
+    "category": "",
+    "english_name": "D‑Dimer",
+    "explanation": "",
+    "unit": ""
+  },
+  "Eicosapentanoico (c20:5n3) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Eicosapentaenoic Acid (EPA, C20:5n3) (serum)",
+    "explanation": "An omega-3 fatty acid found primarily in fish oil. EPA has anti-inflammatory properties and is important for cardiovascular health, brain function, and mood regulation.",
+    "unit": "µg/mL"
+  },
+  "Elaidico (t-c18:1n9) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Elaidic Acid (trans-C18:1n9) (serum)",
+    "explanation": "A trans-fatty acid formed during the partial hydrogenation of vegetable oils. High levels are associated with increased cardiovascular risk and should be minimized in the diet.",
+    "unit": "µg/mL"
+  },
+  "Eosinófilos": {
+    "category": "",
+    "english_name": "Eosinophils",
+    "explanation": "",
+    "unit": ""
+  },
+  "Eosinófilos %": {
+    "category": "",
+    "english_name": "Eosinophils (%)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Esteárico (c18:0) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Stearic Acid (C18:0) (serum)",
+    "explanation": "A saturated fatty acid found in animal fats and cocoa butter. Unlike other saturated fats, stearic acid appears to have a neutral effect on cholesterol levels.",
+    "unit": "µg/mL"
+  },
+  "Estrona": {
+    "category": "",
+    "english_name": "Estrona",
+    "explanation": "",
+    "unit": ""
+  },
+  "FSH": {
+    "category": "Endocrinology - Pituitary Hormones",
+    "english_name": "FSH",
+    "explanation": "",
+    "unit": ""
+  },
+  "Factor Reumatoide en suero (ABBOTT)": {
+    "category": "",
+    "english_name": "Factor Reumatoide (serum) (ABBOTT)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Factor Rh (D)": {
+    "category": "",
+    "english_name": "Rh factor (D)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ferritina": {
+    "category": "Iron Metabolism",
+    "english_name": "Ferritin",
+    "explanation": "",
+    "unit": ""
+  },
+  "Fibrinógeno derivado": {
+    "category": "",
+    "english_name": "Fibrinogen (derived)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Filtrado glomerular estimado (CKD-EPI) valor superior creat": {
+    "category": "",
+    "english_name": "Estimated GFR estimated (CKD-EPI) upper value creat",
+    "explanation": "",
+    "unit": ""
+  },
+  "Fosfatasa alcalina ALP": {
+    "category": "",
+    "english_name": "Alkaline Phosphatase (ALP)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Fosfatasa alcalina ósea": {
+    "category": "",
+    "english_name": "Fosfatasa alcalina osea",
+    "explanation": "",
+    "unit": ""
+  },
+  "Fósforo (Fosfato)": {
+    "category": "",
+    "english_name": "Phosphorus (phosphate)",
+    "explanation": "",
+    "unit": ""
+  },
+  "GENOTIPO LIGANDO KIR (GRUPO HLA C)": {
+    "category": "",
+    "english_name": "GENOTIPO LIGANDO KIR (GRUPO HLA C)",
+    "explanation": "",
+    "unit": ""
+  },
+  "GENOTIPO LIGANDO KIR (GRUPO HLA C) COMENTARIO": {
+    "category": "",
+    "english_name": "GENOTIPO LIGANDO KIR (GRUPO HLA C) COMENTARIO",
+    "explanation": "",
+    "unit": ""
+  },
+  "Gamma-glutamil transferasa (GGT)": {
+    "category": "Liver Function",
+    "english_name": "Gamma-Glutamyl Transferase (GGT)",
+    "explanation": "GGT is a liver enzyme that can be elevated in liver disease, bile duct problems, or alcohol consumption.",
+    "unit": "U/L"
+  },
+  "Gamma-linolénico (c18:3n6) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Gamma-linolenic Acid (C18:3n6) (serum)",
+    "explanation": "An omega-6 fatty acid derived from linoleic acid. It has anti-inflammatory properties and may help with conditions like rheumatoid arthritis and skin disorders.",
+    "unit": "µg/mL"
+  },
+  "Ghrelina": {
+    "category": "",
+    "english_name": "Ghrelin",
+    "explanation": "",
+    "unit": ""
+  },
+  "Glucosa (suero/plasma)": {
+    "category": "Carbohydrate Metabolism",
+    "english_name": "Glucose (serum/plasma)",
+    "explanation": "Blood glucose levels reflect the body's ability to regulate sugar metabolism. Elevated levels may indicate diabetes or insulin resistance.",
+    "unit": "mg/dL"
+  },
+  "Glucosa en orina": {
+    "category": "",
+    "english_name": "Urine Glucose",
+    "explanation": "",
+    "unit": ""
+  },
+  "Grupo sanguíneo": {
+    "category": "",
+    "english_name": "Blood group",
+    "explanation": "",
+    "unit": ""
+  },
+  "HCM": {
+    "category": "",
+    "english_name": "HCM",
+    "explanation": "",
+    "unit": ""
+  },
+  "Hematocrito": {
+    "category": "Hematology and Hemostasis",
+    "english_name": "Hematocrit",
+    "explanation": "Hematocrit measures the percentage of blood volume occupied by red blood cells.",
+    "unit": "%"
+  },
+  "Hematíes": {
+    "category": "Hematology and Hemostasis",
+    "english_name": "Red Blood Cells",
+    "explanation": "Red blood cell count measures the number of erythrocytes in the blood. These cells carry oxygen from the lungs to tissues throughout the body.",
+    "unit": "x10⁶/mm³"
+  },
+  "Hematíes en orina": {
+    "category": "",
+    "english_name": "Urine Red Blood Cells",
+    "explanation": "",
+    "unit": ""
+  },
+  "Hemoglobina": {
+    "category": "Hematology and Hemostasis",
+    "english_name": "Hemoglobin",
+    "explanation": "Hemoglobin is the protein in red blood cells that carries oxygen. Low levels may indicate anemia.",
+    "unit": "g/dL"
+  },
+  "Hemoglobina A1c (IFCC) por HPLC": {
+    "category": "Carbohydrate Metabolism",
+    "english_name": "Hemoglobin A1c (IFCC) (HPLC)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Hemoglobina A1c (NGSP) por HPLC": {
+    "category": "Carbohydrate Metabolism",
+    "english_name": "Hemoglobin A1c",
+    "explanation": "HbA1c reflects average blood glucose levels over the past 2-3 months, providing a long-term view of glycemic control.",
+    "unit": "%"
+  },
+  "Hierro": {
+    "category": "Iron Metabolism",
+    "english_name": "Iron",
+    "explanation": "",
+    "unit": ""
+  },
+  "Holotranscobalamina": {
+    "category": "",
+    "english_name": "Holotranscobalamina",
+    "explanation": "",
+    "unit": ""
+  },
+  "Homocisteína ABBOTT": {
+    "category": "",
+    "english_name": "Homocisteina ABBOTT",
+    "explanation": "",
+    "unit": ""
+  },
+  "INR (Ratio Internacional Normalizado T.protrombina)": {
+    "category": "",
+    "english_name": "INR (Ratio Internacional Normalizado T.protrombina)",
+    "explanation": "",
+    "unit": ""
+  },
+  "IgE": {
+    "category": "Immunology",
+    "english_name": "IgE",
+    "explanation": "",
+    "unit": ""
+  },
+  "IgE (ABBOTT)": {
+    "category": "",
+    "english_name": "IgE (ABBOTT)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Indice Omega 3 (W3)": {
+    "category": "Preventive Medicine",
+    "english_name": "Omega 3 Index (W3)",
+    "explanation": "A measure of the percentage of EPA and DHA in red blood cell membranes. An optimal omega-3 index (8-12%) is associated with reduced cardiovascular risk and improved cognitive function.",
+    "unit": "%"
+  },
+  "Inhibina B": {
+    "category": "",
+    "english_name": "Inhibina B",
+    "explanation": "",
+    "unit": ""
+  },
+  "Inmunoglobulina A (IgA)": {
+    "category": "",
+    "english_name": "Inmunoglobulina A (IgA)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Insulina": {
+    "category": "",
+    "english_name": "Insulina",
+    "explanation": "",
+    "unit": ""
+  },
+  "Interleuquina 10": {
+    "category": "",
+    "english_name": "Interleuquina 10",
+    "explanation": "",
+    "unit": ""
+  },
+  "Interleuquina 2": {
+    "category": "",
+    "english_name": "Interleuquina 2",
+    "explanation": "",
+    "unit": ""
+  },
+  "Interleuquina 6": {
+    "category": "",
+    "english_name": "Interleuquina 6",
+    "explanation": "",
+    "unit": ""
+  },
+  "LH": {
+    "category": "Endocrinology - Pituitary Hormones",
+    "english_name": "LH",
+    "explanation": "",
+    "unit": ""
+  },
+  "LOCUS c (CLASE I)": {
+    "category": "",
+    "english_name": "LOCUS c (CLASE I)",
+    "explanation": "",
+    "unit": ""
+  },
+  "LUC": {
+    "category": "Hematology and Hemostasis",
+    "english_name": "Large Unstained Cells",
+    "explanation": "Large unstained cells are white blood cells of large size that do not take standard staining or are not classified by the standard differential. They may include activated lymphocytes, atypical lymphocytes, or other unclassified cells. Elevated levels may indicate infection, inflammation, or immune response.",
+    "unit": "x10³/mm³"
+  },
+  "LUC %": {
+    "category": "Hematology and Hemostasis",
+    "english_name": "Large Unstained Cells (%)",
+    "explanation": "Percentage of large unstained cells among total white blood cells. These are white blood cells of large size that do not take standard staining or are not classified by the standard differential.",
+    "unit": "%"
+  },
+  "Leptina": {
+    "category": "",
+    "english_name": "Leptina",
+    "explanation": "",
+    "unit": ""
+  },
+  "Leucocitos": {
+    "category": "Hematology and Hemostasis",
+    "english_name": "White Blood Cells",
+    "explanation": "White blood cell count indicates the number of immune cells in circulation. Elevated levels may suggest infection or inflammation.",
+    "unit": "x10³/mm³"
+  },
+  "Leucocitos en orina": {
+    "category": "",
+    "english_name": "Urine White Blood Cells",
+    "explanation": "",
+    "unit": ""
+  },
+  "Linfocitos": {
+    "category": "",
+    "english_name": "Lymphocytes",
+    "explanation": "",
+    "unit": ""
+  },
+  "Linfocitos %": {
+    "category": "",
+    "english_name": "Lymphocytes (%)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Linoleico (c18:2n6) esencial en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Linoleic Acid (C18:2n6) Essential (serum)",
+    "explanation": "An essential omega-6 polyunsaturated fatty acid that must be obtained from the diet. It is a precursor to other important fatty acids and plays a role in skin health and inflammation regulation.",
+    "unit": "µg/mL"
+  },
+  "Lipoproteína (a) - Lp(a)": {
+    "category": "",
+    "english_name": "Lipoproteina (a) - Lp(a)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Liposcale": {
+    "category": "",
+    "english_name": "Liposcale",
+    "explanation": "",
+    "unit": ""
+  },
+  "MALAGA - Vitamina D 25OH (calcidiol)": {
+    "category": "",
+    "english_name": "MALAGA - Vitamina D 25OH (calcidiol)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Macroprolactina": {
+    "category": "",
+    "english_name": "Macroprolactina",
+    "explanation": "",
+    "unit": ""
+  },
+  "Magnesio": {
+    "category": "Ions",
+    "english_name": "Magnesium",
+    "explanation": "",
+    "unit": ""
+  },
+  "Magnesio eritrocitario": {
+    "category": "",
+    "english_name": "Erythrocyte Magnesium",
+    "explanation": "",
+    "unit": ""
+  },
+  "Mercurio en sangre": {
+    "category": "",
+    "english_name": "Mercury (blood)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Mirístico (c14:0) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Myristic Acid (C14:0) (serum)",
+    "explanation": "A saturated fatty acid found in dairy products and some vegetable oils. Elevated levels may be associated with increased cardiovascular risk.",
+    "unit": "µg/mL"
+  },
+  "Monocitos": {
+    "category": "",
+    "english_name": "Monocytes",
+    "explanation": "",
+    "unit": ""
+  },
+  "Monocitos %": {
+    "category": "",
+    "english_name": "Monocytes (%)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Neutrófilos": {
+    "category": "",
+    "english_name": "Neutrophils",
+    "explanation": "",
+    "unit": ""
+  },
+  "Neutrófilos %": {
+    "category": "",
+    "english_name": "Neutrophils (%)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Nitritos en orina": {
+    "category": "",
+    "english_name": "Urine Nitrites",
+    "explanation": "",
+    "unit": ""
+  },
+  "Nota aclaratoria informe:": {
+    "category": "",
+    "english_name": "Nota aclaratoria informe:",
+    "explanation": "",
+    "unit": ""
+  },
+  "Oleico (c18:1n9) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Oleic Acid (C18:1n9) (serum)",
+    "explanation": "A monounsaturated omega-9 fatty acid, the main component of olive oil. It is associated with cardiovascular benefits and improved lipid profiles.",
+    "unit": "µg/mL"
+  },
+  "Osteocalcina": {
+    "category": "",
+    "english_name": "Osteocalcin",
+    "explanation": "",
+    "unit": ""
+  },
+  "PSA": {
+    "category": "Preventive Medicine",
+    "english_name": "PSA",
+    "explanation": "",
+    "unit": ""
+  },
+  "PTH intacta (QUIMIOLUMINISCENCIA)": {
+    "category": "",
+    "english_name": "Intact PTH",
+    "explanation": "",
+    "unit": ""
+  },
+  "Palmitoleico (c16:1n7) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Palmitoleic Acid (C16:1n7) (serum)",
+    "explanation": "A monounsaturated omega-7 fatty acid that may have beneficial effects on insulin sensitivity and lipid metabolism.",
+    "unit": "µg/mL"
+  },
+  "Palmítico (c16:0) en suero": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Palmitic Acid (C16:0) (serum)",
+    "explanation": "The most common saturated fatty acid in the human body. It is found in palm oil, meat, and dairy products. High levels may be associated with increased cardiovascular risk.",
+    "unit": "µg/mL"
+  },
+  "Perfil poder antioxidante total": {
+    "category": "Personalized Preventive Medicine Profile",
+    "english_name": "Total Antioxidant Capacity Profile",
+    "explanation": "Measures the overall antioxidant capacity of the body, assessing the ability to neutralize free radicals and oxidative stress.",
+    "unit": "µmol/L"
+  },
+  "Plaquetas": {
+    "category": "Hematology and Hemostasis",
+    "english_name": "Platelets",
+    "explanation": "Platelets are essential for blood clotting. Abnormal levels can affect bleeding or clotting risk.",
+    "unit": "x10³/mm³"
+  },
+  "Potasio": {
+    "category": "Ions",
+    "english_name": "Potassium",
+    "explanation": "",
+    "unit": ""
+  },
+  "Pregnenolona": {
+    "category": "",
+    "english_name": "Pregnenolona",
+    "explanation": "",
+    "unit": ""
+  },
+  "Progesterona": {
+    "category": "",
+    "english_name": "Progesterona",
+    "explanation": "",
+    "unit": ""
+  },
+  "Prolactina": {
+    "category": "",
+    "english_name": "Prolactina",
+    "explanation": "",
+    "unit": ""
+  },
+  "Propéptido N-terminal del procolágeno tipo I": {
+    "category": "",
+    "english_name": "Propeptido N-terminal del procolageno tipo I",
+    "explanation": "",
+    "unit": ""
+  },
+  "Proteína C Reactiva": {
+    "category": "Proteins",
+    "english_name": "C-Reactive Protein",
+    "explanation": "C-reactive protein is a marker of inflammation in the body. Elevated levels may indicate infection, injury, or chronic inflammatory conditions.",
+    "unit": "mg/L"
+  },
+  "Proteína C Reactiva en suero (Ultrasensible)": {
+    "category": "",
+    "english_name": "C‑Reactive Protein (high‑sensitivity)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Proteína catiónica de eosinófilos": {
+    "category": "",
+    "english_name": "Proteina cationica de eosinofilos",
+    "explanation": "",
+    "unit": ""
+  },
+  "Proteínas en orina": {
+    "category": "",
+    "english_name": "Urine Proteins",
+    "explanation": "",
+    "unit": ""
+  },
+  "Proteínas totales": {
+    "category": "Proteins",
+    "english_name": "Total Proteins",
+    "explanation": "",
+    "unit": ""
+  },
+  "Péptido C": {
+    "category": "",
+    "english_name": "Peptido C",
+    "explanation": "",
+    "unit": ""
+  },
+  "RDW": {
+    "category": "Hematology and Hemostasis",
+    "english_name": "RDW",
+    "explanation": "",
+    "unit": ""
+  },
+  "RPR": {
+    "category": "",
+    "english_name": "RPR",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ratio de cefalina (APTT)": {
+    "category": "",
+    "english_name": "aPTT Ratio",
+    "explanation": "",
+    "unit": ""
+  },
+  "SHBG (Globulina fijadora hormonas sexuales)": {
+    "category": "",
+    "english_name": "SHBG (Globulina fijadora hormonas sexuales)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Sedimento": {
+    "category": "",
+    "english_name": "Urine Sediment",
+    "explanation": "",
+    "unit": ""
+  },
+  "Selenio en suero": {
+    "category": "",
+    "english_name": "Selenium (serum)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Sodio": {
+    "category": "Ions",
+    "english_name": "Sodium",
+    "explanation": "",
+    "unit": ""
+  },
+  "Somatomedina C (IGF-1)": {
+    "category": "",
+    "english_name": "Somatomedina C (IGF-1)",
+    "explanation": "",
+    "unit": ""
+  },
+  "T3": {
+    "category": "Endocrinology - Thyroid Hormones",
+    "english_name": "T3",
+    "explanation": "",
+    "unit": ""
+  },
+  "T3 reverse": {
+    "category": "",
+    "english_name": "T3 reverse",
+    "explanation": "",
+    "unit": ""
+  },
+  "T3L": {
+    "category": "",
+    "english_name": "T3L",
+    "explanation": "",
+    "unit": ""
+  },
+  "T4": {
+    "category": "Endocrinology - Thyroid Hormones",
+    "english_name": "T4",
+    "explanation": "",
+    "unit": ""
+  },
+  "T4L": {
+    "category": "",
+    "english_name": "T4L",
+    "explanation": "",
+    "unit": ""
+  },
+  "TNF alfa (Factor de necrosis tumoral) (DESCATALOGADO TEMPORALMENTE)": {
+    "category": "",
+    "english_name": "TNF alfa (Factor de necrosis tumoral) (DESCATALOGADO TEMPORALMENTE)",
+    "explanation": "",
+    "unit": ""
+  },
+  "TSH": {
+    "category": "Endocrinology - Thyroid Hormones",
+    "english_name": "Thyroid Stimulating Hormone",
+    "explanation": "Thyroid function is assessed through TSH (Thyroid Stimulating Hormone), T4 (Thyroxine), and T3 (Triiodothyronine). TSH is produced by the pituitary gland and stimulates the thyroid to produce T4 and T3. T4 and T3 are the active forms of thyroid hormones that regulate metabolism, energy production, and body temperature. Together, these measurements provide a comprehensive view of thyroid function. Elevated TSH with low T4/T3 suggests hypothyroidism, while low TSH with high T4/T3 indicates hyperthyroidism.",
+    "unit": "mU/L"
+  },
+  "Testosterona Libre BARCELONA": {
+    "category": "",
+    "english_name": "Free Testosterone (lab-specific)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Testosterona biodisponible": {
+    "category": "Endocrinology - Sex Hormones",
+    "english_name": "Bioavailable Testosterone",
+    "explanation": "",
+    "unit": ""
+  },
+  "Testosterona libre estimada": {
+    "category": "Endocrinology - Sex Hormones",
+    "english_name": "Estimated Free Testosterone",
+    "explanation": "",
+    "unit": ""
+  },
+  "Testosterona total": {
+    "category": "Endocrinology - Sex Hormones",
+    "english_name": "Total Testosterone",
+    "explanation": "Testosterone is the primary male sex hormone, important for muscle mass, bone density, and sexual function.",
+    "unit": "ng/mL"
+  },
+  "Tiempo de protrombina": {
+    "category": "",
+    "english_name": "Prothrombin Time",
+    "explanation": "",
+    "unit": ""
+  },
+  "Tiempo de tromboplastina parcial activado (cefalina) (APTT)": {
+    "category": "",
+    "english_name": "Activated Partial Thromboplastin Time (aPTT)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Tioles totales": {
+    "category": "",
+    "english_name": "Tioles totales",
+    "explanation": "",
+    "unit": ""
+  },
+  "Transferrina": {
+    "category": "Iron Metabolism",
+    "english_name": "Transferrin",
+    "explanation": "",
+    "unit": ""
+  },
+  "Triglicéridos": {
+    "category": "Lipid Metabolism",
+    "english_name": "Triglycerides",
+    "explanation": "Triglycerides are a type of fat in the blood. Elevated levels are associated with increased cardiovascular risk.",
+    "unit": "mg/dL"
+  },
+  "Urato": {
+    "category": "Renal Function",
+    "english_name": "Urate",
+    "explanation": "",
+    "unit": ""
+  },
+  "Urea": {
+    "category": "Renal Function",
+    "english_name": "Urea",
+    "explanation": "Urea is a waste product of protein metabolism. Elevated levels may indicate impaired kidney function.",
+    "unit": "mg/dL"
+  },
+  "Urobilinógeno en orina": {
+    "category": "",
+    "english_name": "Urine Urobilinogen",
+    "explanation": "",
+    "unit": ""
+  },
+  "VCM": {
+    "category": "",
+    "english_name": "VCM",
+    "explanation": "",
+    "unit": ""
+  },
+  "VDRL": {
+    "category": "",
+    "english_name": "VDRL",
+    "explanation": "",
+    "unit": ""
+  },
+  "VPM": {
+    "category": "",
+    "english_name": "VPM",
+    "explanation": "",
+    "unit": ""
+  },
+  "VSG 1ª hora": {
+    "category": "Hematology and Hemostasis",
+    "english_name": "ESR (1st hour)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Vitamina A (Retinol) en suero": {
+    "category": "",
+    "english_name": "Vitamina A (Retinol) (serum)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Vitamina B1 (Tiamina) en sangre": {
+    "category": "",
+    "english_name": "Vitamina B1 (Tiamina) (blood)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Vitamina B12": {
+    "category": "Vitamins",
+    "english_name": "Vitamin B12",
+    "explanation": "Vitamin B12 is crucial for nerve function and red blood cell formation. Deficiency can lead to anemia and neurological symptoms.",
+    "unit": "pg/mL"
+  },
+  "Vitamina B6 (piridoxal 5 fosfato) en sangre": {
+    "category": "",
+    "english_name": "Vitamina B6 (piridoxal 5 fosfato) (blood)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Vitamina D 25OH (calcidiol)": {
+    "category": "Vitamins",
+    "english_name": "Vitamin D (25-OH)",
+    "explanation": "Vitamin D is essential for bone health, immune function, and calcium absorption. Levels reflect sun exposure, dietary intake, and metabolic status.",
+    "unit": "ng/mL"
+  },
+  "Zinc en suero": {
+    "category": "",
+    "english_name": "Zinc (serum)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Zinc eritrocitario": {
+    "category": "",
+    "english_name": "Erythrocyte Zinc",
+    "explanation": "",
+    "unit": ""
+  },
+  "pH en orina": {
+    "category": "",
+    "english_name": "Urine pH",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ácido Fólico (Vitamina B9)": {
+    "category": "Vitamins",
+    "english_name": "Folic Acid (Vitamin B9)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Ácido fólico eritrocitario": {
+    "category": "Vitamins",
+    "english_name": "Erythrocyte Folic Acid",
+    "explanation": "",
+    "unit": "ng/mL"
+  },
+  "Ácido metil Malónico en suero": {
+    "category": "",
+    "english_name": "Ácido metil Malónico (serum)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Índice HOMA (resistencia a la insulina)": {
+    "category": "",
+    "english_name": "Indice HOMA (resistencia a la insulina)",
+    "explanation": "",
+    "unit": ""
+  },
+  "Índice de saturación de transferrina": {
+    "category": "",
+    "english_name": "Saturation index de transferrina",
+    "explanation": "",
+    "unit": ""
+  }
+}

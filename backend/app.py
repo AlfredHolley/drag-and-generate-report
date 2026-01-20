@@ -1,0 +1,254 @@
+from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
+import os
+import sys
+import uuid
+import tempfile
+from werkzeug.utils import secure_filename
+import json
+
+# Add backend directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+app = Flask(__name__)
+CORS(app)
+
+# Configuration
+UPLOAD_FOLDER = 'uploads'
+OUTPUT_FOLDER = 'outputs'
+ALLOWED_EXTENSIONS = {'csv'}
+
+# Ensure directories exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    """Receive CSV file and save it temporarily"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'Invalid file type. Only CSV files are allowed'}), 400
+        
+        # Check file size (max 10MB)
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        if file_size > 10 * 1024 * 1024:
+            return jsonify({'error': 'File too large. Maximum size is 10MB'}), 400
+        
+        # Generate unique file ID
+        file_id = str(uuid.uuid4())
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, f"{file_id}_{filename}")
+        
+        try:
+            file.save(filepath)
+        except Exception as e:
+            return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
+        
+        return jsonify({
+            'file_id': file_id,
+            'filename': filename,
+            'message': 'File uploaded successfully'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Upload failed: {str(e)}'}), 500
+
+@app.route('/api/process', methods=['POST'])
+def process_file():
+    """Process CSV file and generate PDF report"""
+    try:
+        if not request.is_json:
+            return jsonify({'error': 'Request must be JSON'}), 400
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Invalid JSON data'}), 400
+        
+        file_id = data.get('file_id')
+        if not file_id:
+            return jsonify({'error': 'file_id is required'}), 400
+        
+        doctor_comments = data.get('doctor_comments', '').strip()
+        patient_metadata = data.get('patient_metadata', {})
+        
+        # Validate patient metadata
+        if not patient_metadata:
+            return jsonify({'error': 'Patient metadata is required (sex, birthdate)'}), 400
+        
+        if not patient_metadata.get('sex'):
+            return jsonify({'error': 'Patient sex is required'}), 400
+        
+        if not patient_metadata.get('birthdate'):
+            return jsonify({'error': 'Patient birthdate is required'}), 400
+        
+        # Find the uploaded file
+        uploaded_file = None
+        try:
+            for filename in os.listdir(UPLOAD_FOLDER):
+                if filename.startswith(file_id):
+                    uploaded_file = os.path.join(UPLOAD_FOLDER, filename)
+                    break
+        except Exception as e:
+            return jsonify({'error': f'Error accessing upload folder: {str(e)}'}), 500
+        
+        if not uploaded_file or not os.path.exists(uploaded_file):
+            return jsonify({'error': 'File not found. Please upload the file again.'}), 404
+        
+        # Validate file is readable
+        try:
+            with open(uploaded_file, 'r', encoding='utf-8') as f:
+                f.read(1)
+        except Exception as e:
+            return jsonify({'error': f'File is not readable: {str(e)}'}), 400
+        
+        # Import processors
+        try:
+            from processors.csv_parser import CSVParser
+            from processors.data_transformer import DataTransformer
+            from pdf_generator.pdf_builder import PDFBuilder
+        except ImportError as e:
+            return jsonify({'error': f'Failed to import processors: {str(e)}'}), 500
+        
+        # Parse CSV
+        try:
+            parser = CSVParser()
+            raw_data = parser.parse(uploaded_file)
+            
+            if not raw_data.get('categories') or len(raw_data['categories']) == 0:
+                return jsonify({'error': 'No categories found in CSV. Please check the file format.'}), 400
+        except Exception as e:
+            return jsonify({'error': f'CSV parsing failed: {str(e)}. Please check the file format.'}), 400
+        
+        # Transform data
+        try:
+            transformer = DataTransformer()
+            structured_data = transformer.transform(raw_data)
+            
+            if not structured_data.get('categories') or len(structured_data['categories']) == 0:
+                return jsonify({'error': 'No data to process. Please check the file format.'}), 400
+        except Exception as e:
+            return jsonify({'error': f'Data transformation failed: {str(e)}'}), 500
+        
+        # Generate PDF
+        try:
+            pdf_builder = PDFBuilder(patient_metadata=patient_metadata)
+            output_filename = f"{file_id}_report.pdf"
+            output_path = os.path.join(OUTPUT_FOLDER, output_filename)
+            pdf_builder.generate(
+                structured_data, 
+                output_path, 
+                doctor_comments=doctor_comments,
+                patient_metadata=patient_metadata
+            )
+            
+            if not os.path.exists(output_path):
+                return jsonify({'error': 'PDF generation failed. Output file not created.'}), 500
+        except Exception as e:
+            return jsonify({'error': f'PDF generation failed: {str(e)}'}), 500
+        
+        return jsonify({
+            'file_id': file_id,
+            'pdf_filename': output_filename,
+            'message': 'PDF generated successfully'
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Processing failed: {str(e)}'}), 500
+
+@app.route('/api/preview/<file_id>', methods=['GET'])
+def preview_file(file_id):
+    """Preview generated PDF"""
+    try:
+        if not file_id or len(file_id) < 10:  # Basic validation
+            return jsonify({'error': 'Invalid file ID'}), 400
+        
+        filename = f"{file_id}_report.pdf"
+        filepath = os.path.join(OUTPUT_FOLDER, filename)
+        
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'PDF not found. It may have expired or been deleted.'}), 404
+        
+        return send_file(filepath, mimetype='application/pdf')
+    except Exception as e:
+        return jsonify({'error': f'Preview failed: {str(e)}'}), 500
+
+@app.route('/api/download/<file_id>', methods=['GET'])
+def download_file(file_id):
+    """Download generated PDF"""
+    try:
+        if not file_id or len(file_id) < 10:  # Basic validation
+            return jsonify({'error': 'Invalid file ID'}), 400
+        
+        filename = f"{file_id}_report.pdf"
+        filepath = os.path.join(OUTPUT_FOLDER, filename)
+        
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'PDF not found. It may have expired or been deleted.'}), 404
+        
+        return send_file(filepath, as_attachment=True, download_name='report.pdf')
+    except Exception as e:
+        return jsonify({'error': f'Download failed: {str(e)}'}), 500
+
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint"""
+    return jsonify({
+        'message': 'Medical Report Generator API',
+        'endpoints': {
+            'POST /api/upload': 'Upload CSV file',
+            'POST /api/process': 'Process CSV and generate PDF (with optional doctor_comments)',
+            'GET /api/preview/<file_id>': 'Preview generated PDF',
+            'GET /api/download/<file_id>': 'Download generated PDF',
+            'GET /api/health': 'Health check'
+        }
+    }), 200
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint"""
+    return jsonify({'status': 'ok'}), 200
+
+@app.route('/logo_bw.svg', methods=['GET'])
+def serve_logo():
+    """Serve the Buchinger Wilhelmi logo"""
+    try:
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logo_bw.svg')
+        if os.path.exists(logo_path):
+            return send_file(logo_path, mimetype='image/svg+xml')
+        else:
+            return jsonify({'error': 'Logo not found'}), 404
+    except Exception as e:
+        return jsonify({'error': f'Error serving logo: {str(e)}'}), 500
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        'error': 'Endpoint not found',
+        'available_endpoints': [
+            'POST /api/upload',
+            'POST /api/process',
+            'GET /api/preview/<file_id>',
+            'GET /api/download/<file_id>',
+            'GET /api/health',
+            'GET /'
+        ]
+    }), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
