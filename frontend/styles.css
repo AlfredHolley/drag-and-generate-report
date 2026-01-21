@@ -38,8 +38,8 @@ body {
 
 /* Header */
 .header {
-    background: rgb(255, 0, 0);
-    /* background: var(--black); */
+    /* background: rgb(255, 0, 0); */
+    background: var(--black);
     padding: 2rem 2rem;
     margin-bottom: 0;
     text-align: left;
