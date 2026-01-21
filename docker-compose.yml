@@ -12,8 +12,9 @@ services:
       - FLASK_ENV=${FLASK_ENV:-production}
       - UPLOAD_FOLDER=${UPLOAD_FOLDER:-/app/uploads}
       - OUTPUT_FOLDER=${OUTPUT_FOLDER:-/app/outputs}
-      - CLEANUP_INTERVAL=${CLEANUP_INTERVAL:-60}
-      - FILE_TIMEOUT=${FILE_TIMEOUT:-600}
+      # IMPORTANT: Timeout de 1 heure et intervalle de 5 minutes pour éviter les suppressions prématurées
+      - CLEANUP_INTERVAL=${CLEANUP_INTERVAL:-300}
+      - FILE_TIMEOUT=${FILE_TIMEOUT:-3600}
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/outputs:/app/outputs
