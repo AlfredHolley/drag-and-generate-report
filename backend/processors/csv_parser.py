@@ -337,8 +337,18 @@ class CSVParser:
         if not date_cols or date_row_idx is None:
             # Log a small sample to help debug production uploads without dumping the whole file
             try:
+                # ULTIMATE DIAGNOSTIC: Log the first 10 lines of the RAW file as text
+                with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+                    raw_lines = [f.readline() for _ in range(10)]
+                logger.warning(f"Date detection failed. RAW FILE CONTENT (10 lines):\n" + "".join(raw_lines))
+                
+                # Also log hex prefix
+                with open(filepath, 'rb') as f:
+                    hex_prefix = f.read(32).hex()
+                logger.warning(f"File hex prefix: {hex_prefix}")
+                
                 sample = df.head(6).to_string(index=False, header=False)
-                logger.warning(f"Date detection failed. CSV head(6):\n{sample}")
+                logger.warning(f"Pandas head(6) with chosen candidate:\n{sample}")
                 # Also log a quick summary of the parsing candidates (top 5) to diagnose
                 # intermittent delimiter/encoding issues in production.
                 try:
