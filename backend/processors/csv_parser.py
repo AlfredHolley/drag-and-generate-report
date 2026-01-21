@@ -154,24 +154,48 @@ class CSVParser:
 
         # Search the first 15 rows (or fewer) for a likely date row - increased from 10
         max_scan = min(15, df.shape[0])
-        for r in range(max_scan):
-            try:
-                row = df.iloc[r]
-            except (IndexError, KeyError):
-                continue
-            score = 0
-            date_like_count = 0
-            for c, v in enumerate(row):
-                if c <= 1:  # skip first two columns (empty + "Analisis")
+
+        # 1) Deterministic fast-path for known export structure:
+        # header row contains "Analisis" and/or "Unidad", and the next row contains the dates.
+        # This matches both data.csv and data_short.csv and avoids "sometimes" behavior.
+        try:
+            header_row_idx = self._find_header_row_idx(df)
+            if header_row_idx is not None and header_row_idx + 1 < df.shape[0]:
+                candidate_idx = header_row_idx + 1
+                row = df.iloc[candidate_idx]
+                date_like = 0
+                for c, v in enumerate(row):
+                    if c <= 1:
+                        continue
+                    if _looks_like_date(str(v)):
+                        date_like += 1
+                if date_like >= 1:
+                    best_row_idx = candidate_idx
+                    best_score = date_like
+        except Exception:
+            # Keep silent; we fall back to heuristic scan below.
+            pass
+
+        # 2) Fallback heuristic scan (for shifted/weird files)
+        if best_row_idx is None:
+            for r in range(max_scan):
+                try:
+                    row = df.iloc[r]
+                except (IndexError, KeyError):
                     continue
-                if _looks_like_date(str(v)):
-                    date_like_count += 1
-                    score += 1
-            # Also check if this row has a reasonable number of date-like values
-            # (at least 2 to be considered a date row)
-            if date_like_count >= 2 and score > best_score:
-                best_score = score
-                best_row_idx = r
+                score = 0
+                date_like_count = 0
+                for c, v in enumerate(row):
+                    if c <= 1:  # skip first two columns (empty + "Analisis")
+                        continue
+                    if _looks_like_date(str(v)):
+                        date_like_count += 1
+                        score += 1
+                # Also check if this row has a reasonable number of date-like values
+                # (at least 2 to be considered a date row)
+                if date_like_count >= 2 and score > best_score:
+                    best_score = score
+                    best_row_idx = r
 
         # If we still haven't found a good date row, try a more lenient approach
         # Look for any row with at least 1 date-like value (might be a file with few dates)
@@ -272,7 +296,7 @@ class CSVParser:
             except Exception:
                 return None
 
-        # Try best-effort combinations; pick the one that yields the most columns and can detect dates.
+        # Try best-effort combinations; pick the one that can detect dates reliably.
         candidates = []
         for enc in ("utf-8-sig", "utf-8", "latin1"):
             # sep=None lets python engine sniff delimiter
@@ -283,13 +307,14 @@ class CSVParser:
                 # Normalize empty strings to 'nan'-like checks downstream
                 # (we already keep_default_na=False, so empties stay as "")
                 date_cols_try, date_row_try = self._extract_date_columns(df_try)
-                score = (df_try.shape[1], len(date_cols_try), 1 if date_row_try is not None else 0)
+                # Prefer candidates that actually detect dates; then prefer more date columns; then more columns.
+                score = (1 if (date_cols_try and date_row_try is not None) else 0, len(date_cols_try), df_try.shape[1])
                 candidates.append((score, enc, sep, df_try, date_cols_try, date_row_try))
 
         if not candidates:
             return {'categories': [], 'date_columns': []}
 
-        # Prefer: more columns, more detected date columns, and a detected date row
+        # Prefer: detected dates, more detected date columns, then wider frame
         candidates.sort(key=lambda x: x[0], reverse=True)
         best_score, best_enc, best_sep, df, date_cols, date_row_idx = candidates[0]
 
