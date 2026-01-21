@@ -73,6 +73,7 @@ function stopActivityTracking() {
 let patientModalOverlay = null;
 let patientModalClose = null;
 let patientFormSubmit = null;
+let uploadedFileInfo = null;
 const patientSex = document.getElementById('patientSex');
 const patientBirthdate = document.getElementById('patientBirthdate');
 const patientForm = document.getElementById('patientForm');
@@ -136,6 +137,7 @@ function initializeElements() {
     patientModalOverlay = document.getElementById('patientModalOverlay');
     patientModalClose = document.getElementById('patientModalClose');
     patientFormSubmit = document.getElementById('patientFormSubmit');
+    uploadedFileInfo = document.getElementById('uploadedFileInfo');
     
     console.log('Elements initialized:', {
         doctorComments: !!doctorComments,
@@ -266,6 +268,10 @@ async function uploadFile(file) {
     try {
         showSection('processing');
         progressFill.style.width = '30%';
+
+        // Ensure modal submit is disabled until upload is confirmed
+        if (patientFormSubmit) patientFormSubmit.disabled = true;
+        if (uploadedFileInfo) uploadedFileInfo.textContent = '';
         
         const formData = new FormData();
         formData.append('file', file);
@@ -293,13 +299,20 @@ async function uploadFile(file) {
         
         uploadedFileId = data.file_id;
         progressFill.style.width = '50%';
-        
-        // Hide processing, show patient form modal
+
+        // Show patient form modal ONLY after upload is confirmed
+        if (uploadedFileInfo) {
+            const sizeKb = file && file.size ? Math.round(file.size / 1024) : null;
+            uploadedFileInfo.textContent = `CSV uploaded: ${data.filename || file.name}${sizeKb ? ` (${sizeKb} KB)` : ''}`;
+        }
+        if (patientFormSubmit) patientFormSubmit.disabled = false;
+
         showSection('upload');
         openPatientModal();
         
     } catch (error) {
         console.error('Upload error:', error);
+        if (patientFormSubmit) patientFormSubmit.disabled = true;
         if (error.name === 'TypeError' && error.message.includes('fetch')) {
             showError('Cannot connect to server. Please make sure the backend is running.');
         } else {

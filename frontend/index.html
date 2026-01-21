@@ -139,6 +139,9 @@
                 <div class="modal-content patient-modal-content">
                     <form id="patientForm" class="patient-form">
                         <div class="form-group">
+                            <div id="uploadedFileInfo" class="form-hint"></div>
+                        </div>
+                        <div class="form-group">
                             <label for="patientSex" class="form-label">Sex</label>
                             <select id="patientSex" class="form-select" required>
                                 <option value="">Select...</option>
@@ -152,7 +155,7 @@
                         </div>
                         <!-- Menstrual cycle phase removed (not required) -->
                         <div class="form-actions">
-                            <button type="submit" class="submit-btn" id="patientFormSubmit">Submit</button>
+                            <button type="submit" class="submit-btn" id="patientFormSubmit" disabled>Submit</button>
                         </div>
                     </form>
                 </div>

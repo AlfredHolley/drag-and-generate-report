@@ -126,9 +126,17 @@ def upload_file():
         except Exception as e:
             return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
         
+        # Include sizes so frontend (and logs) can detect truncation patterns
+        try:
+            saved_size_final = os.path.getsize(filepath)
+        except Exception:
+            saved_size_final = None
+
         return jsonify({
             'file_id': file_id,
             'filename': filename,
+            'size_client': file_size,
+            'size_disk': saved_size_final,
             'message': 'File uploaded successfully'
         }), 200
         

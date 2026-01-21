@@ -575,6 +575,12 @@ body {
     justify-content: flex-end;
 }
 
+.form-hint {
+    font-size: 0.9rem;
+    color: rgba(0, 0, 0, 0.6);
+    margin-bottom: 0.25rem;
+}
+
 .submit-btn {
     background: var(--black);
     color: var(--white);
