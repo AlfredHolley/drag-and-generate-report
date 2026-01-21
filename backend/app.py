@@ -198,11 +198,14 @@ def process_file():
         if not patient_metadata.get('birthdate'):
             return jsonify({'error': 'Patient birthdate is required'}), 400
         
-        # Find the uploaded file
+        # Find the uploaded file (exclude .activity and .backup files)
         uploaded_file = None
         try:
             for filename in os.listdir(UPLOAD_FOLDER):
-                if filename.startswith(file_id):
+                if filename.startswith(file_id) and filename.endswith('.csv'):
+                    # Skip activity and backup files
+                    if '.activity' in filename or '.backup' in filename:
+                        continue
                     uploaded_file = os.path.join(UPLOAD_FOLDER, filename)
                     break
         except Exception as e:
