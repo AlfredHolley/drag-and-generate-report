@@ -75,23 +75,9 @@ let patientModalClose = null;
 let patientFormSubmit = null;
 const patientSex = document.getElementById('patientSex');
 const patientBirthdate = document.getElementById('patientBirthdate');
-const menstrualPhase = document.getElementById('menstrualPhase');
-const menstrualPhaseGroup = document.getElementById('menstrualPhaseGroup');
 const patientForm = document.getElementById('patientForm');
 
-// Show/hide menstrual phase based on sex
-if (patientSex) {
-    patientSex.addEventListener('change', () => {
-        if (patientSex.value === 'F') {
-            menstrualPhaseGroup.classList.remove('hidden');
-        } else {
-            menstrualPhaseGroup.classList.add('hidden');
-            if (menstrualPhase) {
-                menstrualPhase.value = '';
-            }
-        }
-    });
-}
+// Menstrual cycle phase removed (not required)
 
 // Calculate age from birthdate
 function calculateAge(birthdate) {
@@ -110,7 +96,6 @@ function calculateAge(birthdate) {
 function getPatientMetadata() {
     const sex = patientSex ? patientSex.value : null;
     const birthdate = patientBirthdate ? patientBirthdate.value : null;
-    const phase = menstrualPhase && menstrualPhase.value ? menstrualPhase.value : null;
     
     if (!sex || !birthdate) {
         return null;
@@ -121,8 +106,7 @@ function getPatientMetadata() {
     return {
         sex: sex,
         birthdate: birthdate,
-        age: age,
-        menstrual_phase: sex === 'F' ? phase : null
+        age: age
     };
 }
 
@@ -593,9 +577,6 @@ function resetUI() {
     }
     if (patientForm) {
         patientForm.reset();
-    }
-    if (menstrualPhaseGroup) {
-        menstrualPhaseGroup.classList.add('hidden');
     }
     progressFill.style.width = '0%';
     closeModal();

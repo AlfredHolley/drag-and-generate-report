@@ -332,6 +332,29 @@ class CSVParser:
             try:
                 sample = df.head(6).to_string(index=False, header=False)
                 logger.warning(f"Date detection failed. CSV head(6):\n{sample}")
+                # Also log a quick summary of the parsing candidates (top 5) to diagnose
+                # intermittent delimiter/encoding issues in production.
+                try:
+                    top = candidates[:5]
+                    cand_lines = []
+                    for score, enc, sep, df_try, date_cols_try, date_row_try in top:
+                        cand_lines.append(
+                            f"- score={score} enc={enc} sep={sep} shape={df_try.shape} "
+                            f"date_row={date_row_try} n_date_cols={len(date_cols_try)}"
+                        )
+                    logger.warning("CSV candidates (top 5):\n" + "\n".join(cand_lines))
+                except Exception:
+                    pass
+                # Log header/date rows vicinity if present
+                try:
+                    hdr = self._find_header_row_idx(df)
+                    logger.warning(f"Detected header_row_idx={hdr}, chosen date_row_idx={date_row_idx}")
+                    if hdr is not None:
+                        logger.warning("Header row:\n" + df.iloc[hdr].to_string(index=False, header=False))
+                        if hdr + 1 < df.shape[0]:
+                            logger.warning("Row after header (expected dates):\n" + df.iloc[hdr + 1].to_string(index=False, header=False))
+                except Exception:
+                    pass
             except Exception:
                 pass
             raise ValueError("Could not detect the date row/columns in the CSV. Please verify the export format.")
