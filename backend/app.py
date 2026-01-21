@@ -26,19 +26,24 @@ CLEANUP_INTERVAL = int(os.environ.get('CLEANUP_INTERVAL', '120')) # Vérifier to
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# Initialize cleanup service
-try:
-    from cleanup_service import CleanupService
-    cleanup_service = CleanupService(
-        upload_folder=UPLOAD_FOLDER,
-        output_folder=OUTPUT_FOLDER,
-        timeout_seconds=CLEANUP_TIMEOUT,
-        check_interval=CLEANUP_INTERVAL
-    )
-    cleanup_service.start()
-except ImportError:
-    cleanup_service = None
-    print("Warning: Cleanup service not available")
+# Initialize cleanup service (disabled by default; enable with ENABLE_CLEANUP=true)
+cleanup_service = None
+_enable_cleanup = os.environ.get('ENABLE_CLEANUP', 'false').strip().lower() in ('1', 'true', 'yes', 'on')
+if _enable_cleanup:
+    try:
+        from cleanup_service import CleanupService
+        cleanup_service = CleanupService(
+            upload_folder=UPLOAD_FOLDER,
+            output_folder=OUTPUT_FOLDER,
+            timeout_seconds=CLEANUP_TIMEOUT,
+            check_interval=CLEANUP_INTERVAL
+        )
+        cleanup_service.start()
+    except ImportError:
+        cleanup_service = None
+        print("Warning: Cleanup service not available")
+else:
+    print("Cleanup service is disabled (set ENABLE_CLEANUP=true to enable).")
 
 def _get_activity_file(filepath):
     """Retourne le chemin du fichier d'activité associé."""
