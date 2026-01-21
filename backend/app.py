@@ -18,8 +18,9 @@ CORS(app)
 UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'uploads')
 OUTPUT_FOLDER = os.environ.get('OUTPUT_FOLDER', 'outputs')
 ALLOWED_EXTENSIONS = {'csv'}
-CLEANUP_TIMEOUT = int(os.environ.get('FILE_TIMEOUT', '600'))  # 10 minutes par défaut
-CLEANUP_INTERVAL = int(os.environ.get('CLEANUP_INTERVAL', '60'))  # 1 minute par défaut
+# Augmenté le timeout par défaut à 1 heure (3600s) au lieu de 10 min
+CLEANUP_TIMEOUT = int(os.environ.get('FILE_TIMEOUT', '3600'))  
+CLEANUP_INTERVAL = int(os.environ.get('CLEANUP_INTERVAL', '120')) # Vérifier toutes les 2 minutes
 
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)

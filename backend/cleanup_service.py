@@ -60,7 +60,16 @@ class CleanupService:
             # Si pas de fichier d'activité, utiliser le timestamp de modification du fichier
             last_activity = filepath.stat().st_mtime
         
-        elapsed = time.time() - last_activity
+        now = time.time()
+        elapsed = now - last_activity
+        
+        # LOG DE DEBUG pour comprendre la suppression prématurée
+        if elapsed < self.timeout_seconds and elapsed > -60: # Si le fichier est encore "jeune"
+             # On ne logue rien ici pour ne pas flooder, sauf si on suspecte une erreur
+             pass
+        elif elapsed >= self.timeout_seconds:
+            print(f"DEBUG Cleanup: File {filepath.name} is {int(elapsed)}s old (timeout={self.timeout_seconds}s). Deleting.")
+            
         return elapsed >= self.timeout_seconds
     
     def _delete_file(self, filepath):
