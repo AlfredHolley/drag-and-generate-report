@@ -318,6 +318,13 @@ class CSVParser:
         candidates.sort(key=lambda x: x[0], reverse=True)
         best_score, best_enc, best_sep, df, date_cols, date_row_idx = candidates[0]
 
+        # Guard against obviously incomplete/truncated files (very small shape)
+        if df.shape[0] < 3 or df.shape[1] < 5:
+            logger.warning(
+                f"CSV appears incomplete/truncated: shape={df.shape}, encoding={best_enc}, sep={best_sep}"
+            )
+            raise ValueError("CSV file seems incomplete or truncated. Please re-export the CSV and try again.")
+
         logger.info(
             f"CSV read: shape={df.shape}, encoding={best_enc}, sep={best_sep}, "
             f"date_row_idx={date_row_idx}, date_cols={len(date_cols)}"

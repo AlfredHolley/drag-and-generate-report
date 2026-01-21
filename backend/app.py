@@ -88,6 +88,9 @@ def upload_file():
         file.seek(0)
         if file_size > 10 * 1024 * 1024:
             return jsonify({'error': 'File too large. Maximum size is 10MB'}), 400
+        # Basic sanity check: avoid obviously truncated uploads
+        if file_size < 200:  # lab exports are typically several KB; 200B catches truncated/empty
+            return jsonify({'error': 'File too small or empty. Please re-export the CSV and try again.'}), 400
         
         # Generate unique file ID
         file_id = str(uuid.uuid4())
@@ -154,7 +157,10 @@ def process_file():
         # Validate file is readable
         try:
             with open(uploaded_file, 'r', encoding='utf-8') as f:
-                f.read(1)
+                # Read a small sample to ensure file is readable and not empty
+                sample = f.read(512)
+                if not sample:
+                    return jsonify({'error': 'Uploaded file is empty. Please re-export the CSV and try again.'}), 400
         except Exception as e:
             return jsonify({'error': f'File is not readable: {str(e)}'}), 400
         
