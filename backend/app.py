@@ -101,6 +101,28 @@ def upload_file():
             file.save(filepath)
             # Mark initial activity
             _update_activity(filepath)
+
+            # Extra sanity/logging to diagnose intermittent truncated uploads in production
+            try:
+                saved_size = os.path.getsize(filepath)
+                app.logger.info(f"Upload saved: filename={filename} file_id={file_id} size_client={file_size} size_disk={saved_size}")
+
+                # Read a small prefix and validate it looks like the expected export
+                with open(filepath, "rb") as fb:
+                    prefix = fb.read(2048)
+                prefix_text = prefix.decode("utf-8", errors="replace")
+                # The typical exports contain at least one of these tokens early.
+                if ("Analisis" not in prefix_text) and ("Datos Evolutivos" not in prefix_text):
+                    app.logger.warning(
+                        f"Upload content does not look like expected lab CSV. "
+                        f"file_id={file_id} filename={filename} prefix={prefix_text[:200]!r}"
+                    )
+                    # Keep storage clean: remove the bad upload
+                    _delete_file_safe(filepath)
+                    return jsonify({'error': 'Uploaded file does not look like the expected lab CSV export. Please re-export and try again.'}), 400
+            except Exception:
+                # Never fail upload due to logging/inspection; parsing will catch issues later.
+                pass
         except Exception as e:
             return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
         
