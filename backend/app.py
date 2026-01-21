@@ -106,7 +106,21 @@ def upload_file():
             # Extra sanity/logging to diagnose intermittent truncated uploads in production
             try:
                 saved_size = os.path.getsize(filepath)
-                app.logger.info(f"Upload saved: filename={filename} file_id={file_id} size_client={file_size} size_disk={saved_size}")
+                # Utiliser WARNING pour s'assurer que ça apparaît dans les logs Gunicorn
+                print(f"UPLOAD: filename={filename} file_id={file_id} size_client={file_size} size_disk={saved_size}")
+                
+                # ALERTE si la taille disque diffère significativement de la taille client
+                if saved_size < file_size * 0.9:
+                    print(f"WARNING: Upload may be truncated! Client sent {file_size} bytes but only {saved_size} saved.")
+                
+                # Compter les lignes pour diagnostic
+                with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+                    line_count = sum(1 for _ in f)
+                print(f"UPLOAD DIAGNOSTIC: {line_count} lines in file")
+                
+                # Un CSV lab valide devrait avoir au moins 50 lignes (header + categories + params)
+                if line_count < 10:
+                    print(f"CRITICAL: File has only {line_count} lines - likely truncated during upload!")
 
                 # Read a small prefix and validate it looks like the expected export
                 with open(filepath, "rb") as fb:
