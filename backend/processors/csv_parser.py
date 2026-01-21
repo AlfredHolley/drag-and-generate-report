@@ -510,15 +510,18 @@ class CSVParser:
         if not spanish_name:
             return spanish_name
 
-        # Normalize (handles accents / composed-vs-decomposed) and remove parenthetical qualifiers
-        s = unicodedata.normalize("NFC", str(spanish_name)).strip()
-        s = re.sub(r"\s*\([^)]*\)\s*", "", s).strip()  # e.g., "Endocrinología (suero/plasma)" -> "Endocrinología"
-        s_lower = s.lower()
+        def _clean(text: str) -> str:
+            # Normalize, strip, and drop any parenthetical qualifier for matching
+            txt = unicodedata.normalize("NFC", str(text)).strip()
+            txt = re.sub(r"\s*\([^)]*\)\s*", "", txt).strip()
+            return txt.lower()
 
-        # Direct exact match against configured spanish_name
+        s_lower = _clean(spanish_name)
+
+        # Direct exact match against configured spanish_name (cleaned too)
         for cat in self.categories_config['categories']:
-            cfg = unicodedata.normalize("NFC", str(cat.get("spanish_name", ""))).strip()
-            if cfg and cfg.lower() == s_lower:
+            cfg = cat.get("spanish_name", "")
+            if cfg and _clean(cfg) == s_lower:
                 return cat["name"]
 
         # Common Spanish variants that appear in data.csv but categories.json uses FR labels
@@ -527,6 +530,11 @@ class CSVParser:
             "inmunologia": "Immunology",
             "endocrinología": "Endocrinology - Pituitary Hormones",  # generic fallback bucket
             "endocrinologia": "Endocrinology - Pituitary Hormones",
+            "serologia": "Serology",
+            "serología": "Serology",
+            "nota asociada al informe": "Report Notes",
+            "nota aclaratoria informe": "Report Notes",
+            "otras pruebas": "Other Tests",
         }
         if s_lower in alias_map:
             return alias_map[s_lower]
