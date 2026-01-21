@@ -121,6 +121,18 @@ def upload_file():
                 # Un CSV lab valide devrait avoir au moins 50 lignes (header + categories + params)
                 if line_count < 10:
                     print(f"CRITICAL: File has only {line_count} lines - likely truncated during upload!")
+                
+                # Calculer un hash MD5 pour traçabilité
+                import hashlib
+                with open(filepath, 'rb') as f:
+                    file_hash = hashlib.md5(f.read()).hexdigest()[:12]
+                print(f"UPLOAD HASH: {file_hash}")
+                
+                # DIAGNOSTIC: Créer une copie de backup pour comparaison
+                backup_path = filepath + ".backup"
+                import shutil
+                shutil.copy2(filepath, backup_path)
+                print(f"UPLOAD BACKUP: created {backup_path}")
 
                 # Read a small prefix and validate it looks like the expected export
                 with open(filepath, "rb") as fb:
@@ -199,13 +211,53 @@ def process_file():
         if not uploaded_file or not os.path.exists(uploaded_file):
             return jsonify({'error': 'File not found. Please upload the file again.'}), 404
         
-        # Validate file is readable
+        # Validate file is readable and check its current state
         try:
-            with open(uploaded_file, 'r', encoding='utf-8') as f:
-                # Read a small sample to ensure file is readable and not empty
-                sample = f.read(512)
-                if not sample:
-                    return jsonify({'error': 'Uploaded file is empty. Please re-export the CSV and try again.'}), 400
+            file_size = os.path.getsize(uploaded_file)
+            file_mtime = os.path.getmtime(uploaded_file)
+            
+            with open(uploaded_file, 'r', encoding='utf-8', errors='replace') as f:
+                lines = f.readlines()
+                line_count = len(lines)
+            
+            # Calculer hash MD5 pour comparaison avec l'upload
+            import hashlib
+            with open(uploaded_file, 'rb') as f:
+                file_hash = hashlib.md5(f.read()).hexdigest()[:12]
+            
+            # DIAGNOSTIC CRITIQUE : Comparer avec l'upload
+            print(f"PROCESS DIAGNOSTIC: file_id={file_id} file={uploaded_file}")
+            print(f"PROCESS DIAGNOSTIC: size={file_size} bytes, lines={line_count}, hash={file_hash}")
+            
+            # ALERTE si le fichier semble tronqué
+            if line_count < 10:
+                print(f"CRITICAL: File has only {line_count} lines at process time!")
+                print(f"CRITICAL: First line preview: {lines[0][:100] if lines else 'EMPTY'}")
+                
+                # Vérifier si le backup existe et comparer
+                backup_path = uploaded_file + ".backup"
+                if os.path.exists(backup_path):
+                    backup_size = os.path.getsize(backup_path)
+                    with open(backup_path, 'rb') as bf:
+                        backup_hash = hashlib.md5(bf.read()).hexdigest()[:12]
+                    print(f"CRITICAL: Backup exists - size={backup_size}, hash={backup_hash}")
+                    print(f"CRITICAL: Main file - size={file_size}, hash={file_hash}")
+                    if backup_hash != file_hash:
+                        print(f"CRITICAL: FILE WAS MODIFIED! Using backup instead.")
+                        # Restaurer depuis le backup
+                        import shutil
+                        shutil.copy2(backup_path, uploaded_file)
+                        # Relire les stats
+                        file_size = os.path.getsize(uploaded_file)
+                        with open(uploaded_file, 'r', encoding='utf-8', errors='replace') as f:
+                            lines = f.readlines()
+                            line_count = len(lines)
+                        print(f"CRITICAL: After restore - size={file_size}, lines={line_count}")
+                else:
+                    print(f"CRITICAL: No backup file found at {backup_path}")
+                
+            if file_size < 200:
+                return jsonify({'error': 'Uploaded file is empty or truncated. Please re-upload.'}), 400
         except Exception as e:
             return jsonify({'error': f'File is not readable: {str(e)}'}), 400
         
