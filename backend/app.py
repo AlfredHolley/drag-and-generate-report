@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import os
 import sys
 import uuid
@@ -11,8 +13,38 @@ import time
 # Add backend directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# Import security configuration
+try:
+    from security_config import (
+        ALLOWED_ORIGINS, RATE_LIMIT_PER_MINUTE, RATE_LIMIT_PER_HOUR,
+        RATE_LIMIT_UPLOAD_PER_HOUR, API_KEY, validate_api_key,
+        sanitize_log_message, SECURITY_HEADERS
+    )
+except ImportError:
+    # Fallback si le module de sécurité n'est pas disponible
+    ALLOWED_ORIGINS = ['http://localhost:8000', 'http://localhost:3000']
+    RATE_LIMIT_PER_MINUTE = 10
+    RATE_LIMIT_PER_HOUR = 100
+    RATE_LIMIT_UPLOAD_PER_HOUR = 20
+    API_KEY = None
+    def validate_api_key(request):
+        return True
+    def sanitize_log_message(message):
+        return message
+    SECURITY_HEADERS = {}
+
 app = Flask(__name__)
-CORS(app)
+
+# Configure CORS avec restrictions
+CORS(app, origins=ALLOWED_ORIGINS, supports_credentials=True)
+
+# Configure Rate Limiting
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=[f"{RATE_LIMIT_PER_HOUR}/hour", f"{RATE_LIMIT_PER_MINUTE}/minute"],
+    storage_uri="memory://"  # En production, utiliser Redis: "redis://localhost:6379"
+)
 
 # Configuration
 UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'uploads')
@@ -25,6 +57,24 @@ CLEANUP_INTERVAL = int(os.environ.get('CLEANUP_INTERVAL', '120')) # Vérifier to
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+
+# Middleware pour ajouter les headers de sécurité
+@app.after_request
+def add_security_headers(response):
+    """Ajoute les headers de sécurité à toutes les réponses"""
+    for header, value in SECURITY_HEADERS.items():
+        response.headers[header] = value
+    return response
+
+# Middleware pour valider l'API key sur les endpoints sensibles
+def require_api_key(f):
+    """Décorateur pour protéger les endpoints avec une API key"""
+    def decorated_function(*args, **kwargs):
+        if not validate_api_key(request):
+            return jsonify({'error': 'Unauthorized. Valid API key required.'}), 401
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
 
 # Initialize cleanup service
 try:
@@ -75,6 +125,7 @@ def _get_file_extension(filename):
 
 
 @app.route('/api/upload', methods=['POST'])
+@limiter.limit(f"{RATE_LIMIT_UPLOAD_PER_HOUR}/hour")
 def upload_file():
     """Receive CSV or PDF file and save it temporarily.
     
@@ -120,7 +171,10 @@ def upload_file():
             # Extra sanity/logging
             try:
                 saved_size = os.path.getsize(filepath)
-                print(f"UPLOAD: filename={filename} file_id={file_id} type={file_extension} size_client={file_size} size_disk={saved_size}")
+                log_msg = sanitize_log_message(
+                    f"UPLOAD: filename={filename} file_id={file_id} type={file_extension} size_client={file_size} size_disk={saved_size}"
+                )
+                print(log_msg)
                 
                 if saved_size < file_size * 0.9:
                     print(f"WARNING: Upload may be truncated! Client sent {file_size} bytes but only {saved_size} saved.")
@@ -195,7 +249,9 @@ def upload_file():
                 pdf_parser = PDFParser()
                 metadata = pdf_parser.extract_metadata_only(filepath)
                 response_data['extracted_metadata'] = metadata
-                print(f"UPLOAD PDF: Extracted metadata: {metadata}")
+                # Ne pas logger les métadonnées sensibles
+                log_msg = sanitize_log_message(f"UPLOAD PDF: Extracted metadata: {metadata}")
+                print(log_msg)
             except Exception as e:
                 app.logger.warning(f"Could not extract PDF metadata: {e}")
                 response_data['extracted_metadata'] = None
@@ -206,6 +262,7 @@ def upload_file():
         return jsonify({'error': f'Upload failed: {str(e)}'}), 500
 
 @app.route('/api/process', methods=['POST'])
+@limiter.limit(f"{RATE_LIMIT_PER_HOUR}/hour")
 def process_file():
     """Process CSV or PDF file and generate PDF report"""
     try:
@@ -265,7 +322,8 @@ def process_file():
             with open(uploaded_file, 'rb') as f:
                 file_hash = hashlib.md5(f.read()).hexdigest()[:12]
             
-            print(f"PROCESS DIAGNOSTIC: file_id={file_id} type={file_type} file={uploaded_file}")
+            log_msg1 = sanitize_log_message(f"PROCESS DIAGNOSTIC: file_id={file_id} type={file_type} file={uploaded_file}")
+            print(log_msg1)
             print(f"PROCESS DIAGNOSTIC: size={file_size} bytes, hash={file_hash}")
             
             # For CSV files, do additional validation
@@ -378,6 +436,7 @@ def process_file():
         return jsonify({'error': f'Processing failed: {str(e)}'}), 500
 
 @app.route('/api/preview/<file_id>', methods=['GET'])
+@limiter.limit(f"{RATE_LIMIT_PER_HOUR}/hour")
 def preview_file(file_id):
     """Preview generated PDF"""
     try:
@@ -398,6 +457,7 @@ def preview_file(file_id):
         return jsonify({'error': f'Preview failed: {str(e)}'}), 500
 
 @app.route('/api/download/<file_id>', methods=['GET'])
+@limiter.limit(f"{RATE_LIMIT_PER_HOUR}/hour")
 def download_file(file_id):
     """Download generated PDF"""
     try:
@@ -499,6 +559,7 @@ if cleanup_service:
     atexit.register(cleanup_service.stop)
 
 @app.route('/api/upload-multiple', methods=['POST'])
+@limiter.limit(f"{RATE_LIMIT_UPLOAD_PER_HOUR}/hour")
 def upload_multiple_files():
     """Receive multiple PDF files and save them temporarily.
     
@@ -619,6 +680,7 @@ def upload_multiple_files():
         return jsonify({'error': f'Upload failed: {str(e)}'}), 500
 
 @app.route('/api/process-multiple', methods=['POST'])
+@limiter.limit(f"{RATE_LIMIT_PER_HOUR}/hour")
 def process_multiple_files():
     """Process multiple PDF files and generate combined PDF report"""
     try:
