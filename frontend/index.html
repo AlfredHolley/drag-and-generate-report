@@ -22,12 +22,16 @@
             <div class="upload-section" id="uploadSection">
                 <div class="timepoint-selector">
                     <label for="timepointSelect" class="timepoint-label">Number of timepoints:</label>
-                    <select id="timepointSelect" class="timepoint-select">
-                        <option value="1">1</option>
-                        <option value="2" selected>2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                    </select>
+                    <div class="timepoint-controls">
+                        <button id="timepointDecrement" class="timepoint-btn" aria-label="Decrease timepoints">−</button>
+                        <select id="timepointSelect" class="timepoint-select">
+                            <option value="1">1</option>
+                            <option value="2" selected>2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                        <button id="timepointIncrement" class="timepoint-btn" aria-label="Increase timepoints">+</button>
+                    </div>
                 </div>
                 <div class="drop-zones-container" id="dropZonesContainer">
                     <!-- Drop zones will be dynamically generated here -->

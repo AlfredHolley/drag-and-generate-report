@@ -171,6 +171,56 @@ body {
     color: var(--black);
 }
 
+.timepoint-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.timepoint-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    border: 2px solid #ecebe5;
+    background: var(--white);
+    color: var(--black);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.timepoint-btn:hover {
+    border-color: var(--cyan-hex);
+    background: var(--cyan-hex);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.timepoint-btn:active {
+    transform: translateY(0);
+}
+
+.timepoint-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.timepoint-btn:disabled:hover {
+    background: var(--white);
+    color: var(--black);
+    border-color: var(--black);
+    transform: none;
+    box-shadow: none;
+}
+
 .timepoint-select {
     padding: 0.75rem 1.5rem;
     font-size: 1rem;

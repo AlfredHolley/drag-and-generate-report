@@ -205,7 +205,57 @@ function initializeDropZones() {
         numberOfTimepoints = parseInt(e.target.value) || 2;
         uploadedFiles = {}; // Reset uploaded files
         createDropZones(numberOfTimepoints);
+        updateTimepointButtons();
     });
+    
+    // Add increment/decrement buttons
+    const incrementBtn = document.getElementById('timepointIncrement');
+    const decrementBtn = document.getElementById('timepointDecrement');
+    
+    if (incrementBtn) {
+        incrementBtn.addEventListener('click', () => {
+            const currentValue = parseInt(timepointSelect.value) || 1;
+            const maxValue = parseInt(timepointSelect.options[timepointSelect.options.length - 1].value) || 4;
+            if (currentValue < maxValue) {
+                timepointSelect.value = (currentValue + 1).toString();
+                numberOfTimepoints = currentValue + 1;
+                uploadedFiles = {}; // Reset uploaded files
+                createDropZones(numberOfTimepoints);
+                updateTimepointButtons();
+            }
+        });
+    }
+    
+    if (decrementBtn) {
+        decrementBtn.addEventListener('click', () => {
+            const currentValue = parseInt(timepointSelect.value) || 1;
+            const minValue = 1;
+            if (currentValue > minValue) {
+                timepointSelect.value = (currentValue - 1).toString();
+                numberOfTimepoints = currentValue - 1;
+                uploadedFiles = {}; // Reset uploaded files
+                createDropZones(numberOfTimepoints);
+                updateTimepointButtons();
+            }
+        });
+    }
+    
+    // Update button states initially
+    updateTimepointButtons();
+}
+
+function updateTimepointButtons() {
+    const incrementBtn = document.getElementById('timepointIncrement');
+    const decrementBtn = document.getElementById('timepointDecrement');
+    
+    if (!timepointSelect || !incrementBtn || !decrementBtn) return;
+    
+    const currentValue = parseInt(timepointSelect.value) || 1;
+    const maxValue = parseInt(timepointSelect.options[timepointSelect.options.length - 1].value) || 4;
+    const minValue = 1;
+    
+    incrementBtn.disabled = currentValue >= maxValue;
+    decrementBtn.disabled = currentValue <= minValue;
 }
 
 function createDropZones(count) {
@@ -1147,6 +1197,11 @@ function resetUI() {
         numberOfTimepoints = 1;
         if (timepointSelect) {
             timepointSelect.value = '1';
+        }
+        
+        // Update timepoint buttons state
+        if (typeof updateTimepointButtons === 'function') {
+            updateTimepointButtons();
         }
         
         // Recreate drop zones to reset their state completely
