@@ -568,8 +568,17 @@ class TableGenerator:
                 if value:
                     value = self.translate_value(str(value))
                 
-                # If value is longer than 8 characters, calculate height needed for wrapping
-                if value and len(str(value)) > 8:
+                # Replace long "Under study..." text with "Normal" BEFORE calculating height
+                value_str = str(value).lower() if value else ""
+                if ("under study" in value_str and "muestra de orina" in value_str) or \
+                   ("under study" in value_str and "no observándose" in value_str) or \
+                   ("under study" in value_str and "elementos anormales" in value_str) or \
+                   ("under study" in value_str and "ningún resultado" in value_str) or \
+                   (value_str.startswith("under study") and len(value_str) > 50):
+                    value = "Normal"
+                
+                # If value is longer than 8 characters (and not "Normal"), calculate height needed for wrapping
+                if value and len(str(value)) > 8 and value != "Normal":
                     # Use actual wrapping to calculate exact height needed
                     available_width = col_widths['date'] - 0.5
                     wrapped_lines = self.pdf._wrap_text(str(value), col_widths['date'] - 2)
@@ -597,9 +606,18 @@ class TableGenerator:
             if value:
                 value = self.translate_value(str(value))
             
-            # Special handling for URINE MICROSCOPE EXAM - display full text if > 8 chars
+            # Special handling for URINE MICROSCOPE EXAM
             if is_urine_microscope:
-                if value and len(str(value)) > 8:
+                # Replace long "Under study..." text with "Normal"
+                value_str = str(value).lower() if value else ""
+                if ("under study" in value_str and "muestra de orina" in value_str) or \
+                   ("under study" in value_str and "no observándose" in value_str) or \
+                   ("under study" in value_str and "elementos anormales" in value_str) or \
+                   (value_str.startswith("under study") and len(value_str) > 50):
+                    value = "Normal"
+                
+                # Display full text if > 8 chars (but not if it's the "Under study" text we just replaced)
+                if value and len(str(value)) > 8 and value != "Normal":
                     # Use multi_cell to display full text with wrapping
                     # Draw filled rectangle for date column with calculated height
                     self.pdf.rect(x_pos, y_start, col_widths['date'], row_height, 'F')
@@ -1056,13 +1074,24 @@ class TableGenerator:
         else:
             value = ""
         
-        # Special handling for URINE MICROSCOPE EXAM - display full text if > 8 chars
+        # Special handling for URINE MICROSCOPE EXAM
         param_name_upper = param.get('english_name', '').upper()
         is_urine_microscope = 'URINE MICROSCOPE' in param_name_upper or 'MICROSCOPE EXAM' in param_name_upper
         
+        # Replace long "Under study..." text with "Normal" for URINE MICROSCOPE EXAM
+        if is_urine_microscope and value:
+            value_str = str(value).lower()
+            if ("under study" in value_str and "muestra de orina" in value_str) or \
+               ("under study" in value_str and "no observándose" in value_str) or \
+               ("under study" in value_str and "elementos anormales" in value_str) or \
+               ("under study" in value_str and "ningún resultado" in value_str) or \
+               (value_str.startswith("under study") and len(value_str) > 50):
+                value = "Normal"
+        
         # Pre-calculate value height for URINE MICROSCOPE EXAM if needed
+        # Note: If value was replaced by "Normal", keep height at 6mm (normal)
         urine_microscope_value_height = 6
-        if is_urine_microscope and value and len(str(value)) > 8:
+        if is_urine_microscope and value and len(str(value)) > 8 and value != "Normal":
             # Calculate approximate number of lines needed
             chars_per_line = max(12, int(col_widths['result'] / 2.5))
             estimated_lines = max(1, (len(str(value)) + chars_per_line - 1) // chars_per_line)
