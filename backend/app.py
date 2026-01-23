@@ -62,8 +62,18 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 @app.after_request
 def add_security_headers(response):
     """Ajoute les headers de sécurité à toutes les réponses"""
+    # Exclure X-Frame-Options pour le preview PDF (nécessaire pour l'affichage en iframe)
+    # Les autres routes gardent X-Frame-Options: DENY pour la sécurité
+    is_preview_pdf = request.path.startswith('/api/preview/')
+    
     for header, value in SECURITY_HEADERS.items():
-        response.headers[header] = value
+        # Pour le preview PDF, ne PAS ajouter X-Frame-Options du tout
+        # Cela permet l'affichage dans une iframe
+        if header == 'X-Frame-Options' and is_preview_pdf:
+            # Ne pas ajouter ce header pour le preview PDF
+            continue
+        else:
+            response.headers[header] = value
     return response
 
 # Middleware pour valider l'API key sur les endpoints sensibles
@@ -452,7 +462,13 @@ def preview_file(file_id):
         # Mark activity
         _update_activity(filepath)
         
-        return send_file(filepath, mimetype='application/pdf')
+        # Créer la réponse et s'assurer que X-Frame-Options n'est PAS défini
+        response = send_file(filepath, mimetype='application/pdf')
+        # Supprimer explicitement X-Frame-Options pour permettre l'affichage en iframe
+        if 'X-Frame-Options' in response.headers:
+            del response.headers['X-Frame-Options']
+        
+        return response
     except Exception as e:
         return jsonify({'error': f'Preview failed: {str(e)}'}), 500
 
