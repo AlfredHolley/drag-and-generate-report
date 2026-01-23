@@ -76,10 +76,11 @@ def sanitize_log_message(message: str) -> str:
     
     # Masquer les valeurs après les mots-clés sensibles
     sanitized = message
+    import re
     for keyword in sensitive_keywords:
         # Pattern pour trouver et masquer les valeurs après le mot-clé
-        import re
-        pattern = rf'({keyword}[=:]\s*)([^\s,}]+)'
-        sanitized = re.sub(pattern, rf'\1***REDACTED***', sanitized, flags=re.IGNORECASE)
+        # Échapper } dans f-string en utilisant }}
+        pattern = rf'({keyword}[=:]\s*)([^\s,}}]+)'
+        sanitized = re.sub(pattern, r'\1***REDACTED***', sanitized, flags=re.IGNORECASE)
     
     return sanitized

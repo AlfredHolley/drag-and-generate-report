@@ -91,9 +91,13 @@ storage_uri = os.environ.get('REDIS_URL', 'redis://localhost:6379')
 - Activez `API_KEY` pour protéger les endpoints
 - Considérez l'implémentation d'un système d'authentification utilisateur (JWT, OAuth2)
 
-### 4. **Chiffrement des Fichiers**
-- Considérez le chiffrement des fichiers au repos (AES-256)
-- Utilisez des clés de chiffrement stockées de manière sécurisée (secrets manager)
+### 4. **Chiffrement des Fichiers (Optionnel)**
+> **Note importante** : Les fichiers sont **transitoires** et sont automatiquement supprimés après 1 heure d'inactivité. Le chiffrement au repos est donc **moins critique** dans ce contexte.
+- **Priorité** : Le chiffrement **en transit** (HTTPS) est plus important que le chiffrement au repos
+- Si vous avez des exigences de conformité strictes (HIPAA, GDPR), vous pouvez considérer :
+  - Chiffrement des fichiers au repos (AES-256) pour les fichiers temporaires
+  - Utilisation de volumes chiffrés au niveau du système de fichiers
+  - Clés de chiffrement stockées de manière sécurisée (secrets manager)
 
 ### 5. **Audit Logging**
 - Implémentez un système de logs d'audit pour tracer :
@@ -106,16 +110,38 @@ storage_uri = os.environ.get('REDIS_URL', 'redis://localhost:6379')
 - Implémentez une validation de signature pour les PDFs médicaux
 
 ### 7. **Isolation des Données**
-- Utilisez des répertoires isolés avec permissions restrictives
-- Considérez l'utilisation de volumes chiffrés pour les fichiers temporaires
+- Utilisez des répertoires isolés avec permissions restrictives (déjà implémenté)
+- Les fichiers temporaires sont automatiquement nettoyés après 1 heure d'inactivité
+- Pour des exigences de conformité strictes, considérez l'utilisation de volumes chiffrés au niveau du système
 
 ## ⚠️ Limitations Actuelles
 
-1. **Pas de chiffrement au repos** - Les fichiers sont stockés en clair
+1. **Pas de chiffrement au repos** - Les fichiers sont stockés en clair (mais sont **transitoires** - supprimés après 1h)
 2. **Pas d'authentification utilisateur** - Seule une API key optionnelle est disponible
-3. **Rate limiting en mémoire** - En production, utilisez Redis
+3. **Rate limiting en mémoire** - En production, utilisez Redis pour une meilleure scalabilité
 4. **Pas de validation antivirus** - Les fichiers uploadés ne sont pas scannés
 5. **Pas d'audit logging complet** - Seuls les logs d'application sont disponibles
+
+## 💡 Architecture de Sécurité pour Fichiers Transitoires
+
+Étant donné que les fichiers sont **transitoires** (supprimés automatiquement après 1 heure), les priorités de sécurité sont :
+
+### 🔴 **Critique** (À implémenter en priorité)
+1. **HTTPS/TLS** - Chiffrement en transit (le plus important)
+2. **Contrôle d'accès** - Authentification et autorisation
+3. **Rate limiting** - Protection contre les abus (déjà implémenté)
+4. **Validation des fichiers** - Protection contre les fichiers malveillants (déjà implémenté)
+
+### 🟡 **Important** (Recommandé pour production)
+1. **Logging sécurisé** - Masquer les données sensibles (déjà implémenté)
+2. **Headers de sécurité** - Protection contre les attaques web (déjà implémenté)
+3. **CORS restreint** - Limiter les domaines autorisés (déjà implémenté)
+4. **Audit logging** - Traçabilité des accès
+
+### 🟢 **Optionnel** (Selon exigences de conformité)
+1. **Chiffrement au repos** - Moins critique pour fichiers transitoires
+2. **Volumes chiffrés** - Au niveau système de fichiers
+3. **Validation antivirus** - Pour fichiers uploadés
 
 ## 🔍 Vérification de la Sécurité
 
