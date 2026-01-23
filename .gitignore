@@ -20,13 +20,14 @@ wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
+data/*
 # Virtual Environment
 venv/
 env/
 ENV/
 env.bak/
 venv.bak/
+data/
 
 # IDE
 .vscode/

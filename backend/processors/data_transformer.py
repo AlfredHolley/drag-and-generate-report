@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 class DataTransformer:
-    """Transform parsed CSV data into structured format for PDF generation"""
+    """Transform parsed CSV/PDF data into structured format for PDF generation"""
     
     def __init__(self):
         self.categories_config = self._load_categories_config()
@@ -16,20 +16,28 @@ class DataTransformer:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     
-    def transform(self, raw_data):
-        """Transform raw parsed data into structured format, regrouping by REFERENCE_VALUES.md categories"""
+    def transform(self, raw_data, reference_ranges=None):
+        """Transform raw parsed data into structured format, regrouping by REFERENCE_VALUES.md categories
+        
+        Args:
+            raw_data: Parsed data from CSV or PDF parser
+            reference_ranges: Optional dict of parameter_name -> reference_range (from PDF)
+        """
         categories = raw_data['categories']
         date_columns = raw_data['date_columns']
+        
+        # Store reference ranges for use in _transform_parameter
+        self._reference_ranges = reference_ranges or {}
         
         # Sort dates chronologically
         sorted_dates = self._sort_dates(date_columns)
         
-        # Collect all parameters from all CSV categories
+        # Collect all parameters from all categories
         all_parameters = []
         for category in categories:
             for param in category['parameters']:
                 # Check if parameter has values BEFORE transformation
-                # Values can be in dict format {date: value} from CSV parser
+                # Values can be in dict format {date: value} from CSV/PDF parser
                 raw_values = param.get('values', {})
                 has_raw_values = False
                 if isinstance(raw_values, dict):
@@ -190,6 +198,9 @@ class DataTransformer:
             if not date_str or date_str == 'nan':
                 return None
             
+            # Handle dates with suffixes like "16/01/2026 - 1"
+            base_date_str = date_str.split(' - ')[0].strip()
+            
             # Try different date formats (including 2-digit years)
             formats = [
                 '%d/%m/%Y',  # 21/12/2023
@@ -205,7 +216,7 @@ class DataTransformer:
             
             for fmt in formats:
                 try:
-                    return datetime.strptime(date_str, fmt)
+                    return datetime.strptime(base_date_str, fmt)
                 except:
                     continue
             
@@ -217,15 +228,24 @@ class DataTransformer:
             parsed = parse_date(date_str)
             if parsed:
                 date_objects.append((date_str, parsed))
+            else:
+                # If can't parse, keep original order
+                date_objects.append((date_str, None))
         
-        # Sort by date object
-        date_objects.sort(key=lambda x: x[1])
+        # Sort by date object, then by original string for unparseable dates
+        date_objects.sort(key=lambda x: (x[1] if x[1] else datetime.max, x[0]))
         
         return [date_str for date_str, _ in date_objects]
     
     def _transform_parameter(self, param, sorted_dates):
         """Transform a single parameter with values and calculations"""
         values = param['values']
+        
+        # Handle __SAMPLE_DATE__ placeholder from PDF parser
+        if '__SAMPLE_DATE__' in values and sorted_dates:
+            placeholder_value = values.pop('__SAMPLE_DATE__')
+            # Use the first (and usually only) date for PDF data
+            values[sorted_dates[0]] = placeholder_value
         
         # Extract values in chronological order
         ordered_values = []
@@ -241,14 +261,23 @@ class DataTransformer:
                     'value': None
                 })
         
+        # Get reference range: first from param itself (PDF), then from stored ranges
+        reference_range = param.get('reference_range', '')
+        if not reference_range and self._reference_ranges:
+            # Try to find by english_name or spanish_name
+            english_name = param.get('english_name', '')
+            spanish_name = param.get('spanish_name', '')
+            reference_range = self._reference_ranges.get(english_name) or self._reference_ranges.get(spanish_name) or ''
+        
         return {
             'english_name': param['english_name'],
             'spanish_name': param['spanish_name'],
             'category': param['category'],
             'unit': param['unit'],
-            'explanation': param['explanation'],
+            'explanation': param.get('explanation', ''),
             'values': ordered_values,
-            'baseline_value': ordered_values[0]['value'] if ordered_values else None
+            'baseline_value': ordered_values[0]['value'] if ordered_values else None,
+            'reference_range': reference_range  # From PDF source if available
         }
     
     def _try_float(self, value):

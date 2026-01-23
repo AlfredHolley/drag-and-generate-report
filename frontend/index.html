@@ -20,17 +20,17 @@
         <main class="main-content">
 
             <div class="upload-section" id="uploadSection">
-                <div class="drop-zone" id="dropZone">
-                    <div class="drop-zone-content">
-                        <svg class="drop-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <h2 class="drop-title">Drop CSV file here</h2>
-                        <p class="drop-text">or click to browse</p>
-                        <input type="file" id="fileInput" accept=".csv" hidden>
-                    </div>
+                <div class="timepoint-selector">
+                    <label for="timepointSelect" class="timepoint-label">Number of timepoints:</label>
+                    <select id="timepointSelect" class="timepoint-select">
+                        <option value="1">1</option>
+                        <option value="2" selected>2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+                <div class="drop-zones-container" id="dropZonesContainer">
+                    <!-- Drop zones will be dynamically generated here -->
                 </div>
             </div>
 
@@ -91,8 +91,8 @@
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
                     </div>
-                    <h3 class="step-title">Step 1 - Upload patient CSV</h3>
-                    <p class="step-description">Upload patient CSV in the right format</p>
+                    <h3 class="step-title">Step 1 - Upload lab results</h3>
+                    <p class="step-description">Upload patient CSV or PDF lab report</p>
                 </div>
                 
                 <div class="step-item">

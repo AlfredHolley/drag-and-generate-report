@@ -413,6 +413,12 @@
     "explanation": "Creatinine is a waste product from muscle metabolism. Blood levels reflect kidney function, as the kidneys filter creatinine from the blood.",
     "unit": "mg/dL"
   },
+  "Filtrado glomerular estimado (CKD-EPI)": {
+    "category": "Biochemistry (serum / plasma) - Renal Function",
+    "english_name": "Estimated Glomerular Filtration Rate (CKD-EPI)",
+    "explanation": "",
+    "unit": "ml/min/1,73m²"
+  },
   "Cromo en suero": {
     "category": "",
     "english_name": "Chromium (serum)",
@@ -726,10 +732,10 @@
     "unit": ""
   },
   "Insulina": {
-    "category": "",
-    "english_name": "Insulina",
-    "explanation": "",
-    "unit": ""
+    "category": "Carbohydrate Metabolism",
+    "english_name": "Basal Insulin (IRI)",
+    "explanation": "Insulin is a hormone produced by the pancreas that allows your body to use sugar (glucose) from carbohydrates in the food that you eat for energy or to store glucose for future use. Basal insulin levels help assess insulin resistance and pancreatic function.",
+    "unit": "µU/mL"
   },
   "Interleuquina 10": {
     "category": "",
@@ -1260,9 +1266,9 @@
     "unit": ""
   },
   "Índice HOMA (resistencia a la insulina)": {
-    "category": "",
-    "english_name": "Indice HOMA (resistencia a la insulina)",
-    "explanation": "",
+    "category": "Carbohydrate Metabolism",
+    "english_name": "HOMA-IR (Insulin Resistance Index)",
+    "explanation": "HOMA-IR (Homeostatic Model Assessment of Insulin Resistance) is a score that estimates insulin resistance based on fasting glucose and insulin levels. Higher values indicate greater resistance to insulin.",
     "unit": ""
   },
   "Índice de saturación de transferrina": {

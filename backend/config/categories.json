@@ -7,6 +7,90 @@
       "explanation": "This category includes parameters related to blood cell counts, hemoglobin levels, and coagulation factors. These measurements help assess overall blood health, oxygen-carrying capacity, and the body's ability to form clots when needed."
     },
     {
+      "name": "Hematology and Hemostasis - Red series",
+      "spanish_name": "Hematología y Hemostasia - Serie Roja",
+      "order": 1,
+      "explanation": "Red blood cell parameters including red blood cell count, hemoglobin, hematocrit, and red cell indices (MCV, MCH, MCHC, RDW). These measurements assess anemia, polycythemia, and red blood cell morphology."
+    },
+    {
+      "name": "Hematology and Hemostasis - White series",
+      "spanish_name": "Hematología y Hemostasia - Serie Blanca",
+      "order": 1,
+      "explanation": "White blood cell parameters including total leukocyte count and differential counts (neutrophils, lymphocytes, monocytes, eosinophils, basophils). These measurements assess immune function and detect infections or hematological disorders."
+    },
+    {
+      "name": "Hematology and Hemostasis - Platelet series",
+      "spanish_name": "Hematología y Hemostasia - Serie Plaquetaria",
+      "order": 1,
+      "explanation": "Platelet parameters including platelet count and mean platelet volume. These measurements assess hemostasis and detect bleeding disorders or thrombocytosis."
+    },
+    {
+      "name": "Hematology and Hemostasis - Erythrocyte sedimentation",
+      "spanish_name": "Hematología y Hemostasia - Sedimentación Eritrocitaria",
+      "order": 1,
+      "explanation": "Erythrocyte sedimentation rate measurements that assess inflammation and can help detect inflammatory conditions, infections, or autoimmune disorders."
+    },
+    {
+      "name": "Biochemistry (serum / plasma)",
+      "spanish_name": "Bioquímica (suero / plasma)",
+      "order": 2,
+      "explanation": "Comprehensive biochemical analysis of serum and plasma samples including carbohydrate metabolism, lipid profile, proteins, renal function, electrolytes, liver function, iron metabolism, phosphocalcic metabolism, and vitamins. These measurements provide a complete assessment of metabolic health, organ function, and nutritional status."
+    },
+    {
+      "name": "Biochemistry (serum / plasma) - Carbohydrate Metabolism",
+      "spanish_name": "Bioquímica (suero / plasma) - Métabolisme Glucidique",
+      "order": 3,
+      "explanation": "Parameters related to glucose regulation and carbohydrate metabolism. These measurements assess blood sugar control, insulin function, and long-term glycemic status, which are crucial for detecting and managing diabetes and metabolic disorders."
+    },
+    {
+      "name": "Biochemistry (serum / plasma) - Lipid Metabolism",
+      "spanish_name": "Bioquímica (suero / plasma) - Métabolisme Lipidique",
+      "order": 4,
+      "explanation": "Lipid profile measurements including cholesterol, triglycerides, and apolipoproteins. These parameters assess cardiovascular risk and lipid metabolism, helping evaluate the risk of heart disease and guide preventive interventions."
+    },
+    {
+      "name": "Biochemistry (serum / plasma) - Proteins",
+      "spanish_name": "Bioquímica (suero / plasma) - Protéines",
+      "order": 5,
+      "explanation": "Protein measurements including total proteins, albumin, and inflammatory markers. These parameters assess nutritional status, liver function, and inflammatory processes in the body."
+    },
+    {
+      "name": "Biochemistry (serum / plasma) - Renal Function",
+      "spanish_name": "Bioquímica (suero / plasma) - Fonction Rénale",
+      "order": 6,
+      "explanation": "Parameters that evaluate kidney function and waste elimination. These measurements assess the kidneys' ability to filter blood, maintain electrolyte balance, and eliminate metabolic waste products."
+    },
+    {
+      "name": "Biochemistry (serum / plasma) - Ions",
+      "spanish_name": "Bioquímica (suero / plasma) - Ions",
+      "order": 7,
+      "explanation": "Electrolyte measurements including sodium, potassium, chloride, and magnesium. These parameters are essential for maintaining fluid balance, nerve function, and muscle contraction throughout the body."
+    },
+    {
+      "name": "Biochemistry (serum / plasma) - Liver Function",
+      "spanish_name": "Bioquímica (suero / plasma) - Fonction Hépatique",
+      "order": 8,
+      "explanation": "Liver enzyme and bilirubin measurements that assess hepatic health and function. These parameters help detect liver damage, inflammation, and disorders affecting bile metabolism."
+    },
+    {
+      "name": "Biochemistry (serum / plasma) - Iron Metabolism",
+      "spanish_name": "Bioquímica (suero / plasma) - Métabolisme du Fer",
+      "order": 9,
+      "explanation": "Parameters related to iron storage, transport, and utilization. These measurements assess iron status, detect deficiencies or excesses, and evaluate the body's capacity to transport and store iron."
+    },
+    {
+      "name": "Biochemistry (serum / plasma) - Phosphocalcic Metabolism",
+      "spanish_name": "Bioquímica (suero / plasma) - Métabolisme Phosphocalcique",
+      "order": 10,
+      "explanation": "Measurements of calcium, phosphorus, and related parameters that assess bone health and mineral metabolism. These parameters are essential for evaluating bone density, parathyroid function, and calcium homeostasis."
+    },
+    {
+      "name": "Biochemistry (serum / plasma) - Vitamins",
+      "spanish_name": "Bioquímica (suero / plasma) - Vitamines",
+      "order": 11,
+      "explanation": "Vitamin and related nutrient measurements including B vitamins, vitamin D, folic acid, and coenzyme Q10. These parameters assess nutritional status and detect deficiencies that can affect various body functions."
+    },
+    {
       "name": "Carbohydrate Metabolism",
       "spanish_name": "Métabolisme Glucidique",
       "order": 2,
@@ -79,27 +163,33 @@
       "explanation": "Immunological parameters assess the immune system's function, including immunoglobulin levels, autoimmune markers, and inflammatory cytokines. These measurements help evaluate immune response and detect potential autoimmune conditions."
     },
     {
+      "name": "Endocrinology",
+      "spanish_name": "Endocrinologie",
+      "order": 14,
+      "explanation": "Endocrine system measurements including thyroid hormones, sex hormones, adrenal hormones, and pituitary hormones. These parameters assess hormonal balance, reproductive health, metabolic regulation, and stress response. Many hormone values vary according to age, sex, menstrual cycle phase, or menopausal status."
+    },
+    {
       "name": "Endocrinology - Thyroid Hormones",
       "spanish_name": "Endocrinologie - Hormones Thyroïdiennes",
-      "order": 14,
+      "order": 15,
       "explanation": "Thyroid hormone measurements including TSH, free T4, free T3, and reverse T3. These parameters assess thyroid function and help diagnose thyroid disorders that affect metabolism, energy levels, and overall health."
     },
     {
       "name": "Endocrinology - Sex Hormones",
       "spanish_name": "Endocrinologie - Hormones Sexuelles",
-      "order": 15,
+      "order": 16,
       "explanation": "Sex hormone measurements including estradiol, testosterone, and related parameters. These measurements are crucial for evaluating reproductive health, and values may vary significantly according to menstrual cycle phase in women."
     },
     {
       "name": "Endocrinology - Adrenal Hormones",
       "spanish_name": "Endocrinologie - Hormones Surrénaliennes",
-      "order": 16,
+      "order": 17,
       "explanation": "Adrenal hormone measurements including cortisol and DHEA-S. These parameters assess stress response, adrenal function, and may vary with age. They help evaluate the body's response to stress and detect adrenal disorders."
     },
     {
       "name": "Endocrinology - Pituitary Hormones",
       "spanish_name": "Endocrinologie - Hormones Hypophysaires",
-      "order": 17,
+      "order": 18,
       "explanation": "Pituitary hormone measurements including LH, FSH, prolactin, SHBG, ACTH, IGF-1, insulin, and related parameters. These measurements assess reproductive function, growth, and metabolic regulation. Many of these hormones have values that vary according to menstrual cycle phase in women, age, or menopausal status."
     },
     {
@@ -127,10 +217,16 @@
       "explanation": "Serological tests detect antibodies and antigens related to infectious diseases, helping identify past or current infections and immune status."
     },
     {
-      "name": "Urine Analysis",
+      "name": "Urine testing",
       "spanish_name": "Análisis de Orina",
       "order": 22,
-      "explanation": "Urine analysis provides information about kidney function, hydration status, and metabolic waste elimination. Parameters include pH, density, glucose, proteins, and cellular elements."
+      "explanation": "Urine analysis provides information about kidney function, hydration status, and metabolic waste elimination. Parameters include physical properties, chemical components, and microscopic examination of sediment."
+    },
+    {
+      "name": "Urine testing - Chemical and urine sediment analysis",
+      "spanish_name": "Análisis de Orina - Análisis Químico y Sedimento Urinario",
+      "order": 22,
+      "explanation": "Chemical analysis of urine including pH, specific gravity, proteins, glucose, ketones, bilirubin, urobilinogen, nitrites, and microscopic examination of sediment including red blood cells, white blood cells, and crystals."
     },
     {
       "name": "Drug Monitoring and Toxicology",
