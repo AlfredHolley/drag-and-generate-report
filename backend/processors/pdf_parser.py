@@ -1121,13 +1121,22 @@ class PDFParser:
         # Value can be: "4,68", "<1", ">5", etc.
         pattern_no_ref = r'^(.+?)\s+(\*?\s*[<>]?\s*[\d,\.]+)\s+([a-zA-Z%/³²µ°]+.*)$'
         
-        # Pattern for qualitative results (e.g., "Negative", "Positive", "en curso", "No se detecta")
-        pattern_qualitative = r'^(.+?)\s+(Negative|Positive|Negativo|Positivo|Normal|Anormal|en curso|in progress|pending|No se detecta|Not detected|No detectado|Reactivo|No reactivo|Reactive|Non-reactive)\s*(?:\[\s*(.+?)\s*\])?$'
+        # Pattern for qualitative results (e.g., "Negative", "Positive", "en curso", "No se detecta", "+", "++", "+++")
+        pattern_qualitative = r'^(.+?)\s+(Negative|Positive|Negativo|Positivo|Normal|Anormal|en curso|in progress|pending|No se detecta|Not detected|No detectado|Reactivo|No reactivo|Reactive|Non-reactive|Trace|Indicio|\+{1,4})\s*(?:\[\s*(.+?)\s*\])?$'
         
         # Pattern for qualitative results with qualitative reference (e.g., "KETONES Negativo Negativo" or "KETONES Negativo Negative")
         # Handles: NAME QUALITATIVE_VALUE QUALITATIVE_REFERENCE (no unit, no brackets)
         # Both value and reference can be in Spanish or English
         pattern_qualitative_with_qual_ref = r'^(.+?)\s+(Negativo|Positivo|Indicio|Normal|Anormal|Negative|Positive|Trace|No se detecta|Not detected|No detectado|Reactivo|No reactivo)\s+(Negativo|Positivo|Indicio|Normal|Anormal|Negative|Positive|Trace|No se detecta|Not detected|No detectado|Reactivo|No reactivo)(?:\s*[<>]?\s*\d+)?$'
+        
+        # Pattern for qualitative results with symbols only (e.g., "KETONES +++" or "KETONES ++")
+        # Handles: NAME +++ or NAME ++ or NAME + (standalone, no unit, no reference)
+        # This is common in urine analysis for semi-quantitative results
+        pattern_qualitative_symbols_only = r'^(.+?)\s+(\+{1,4})\s*$'
+        
+        # Pattern for qualitative results with symbols and qualitative reference (e.g., "KETONES +++ Negative" or "KETONES ++ Negativo")
+        # Handles: NAME SYMBOL QUALITATIVE_REFERENCE
+        pattern_qualitative_symbols_with_ref = r'^(.+?)\s+(\+{1,4})\s+(Negativo|Positivo|Indicio|Normal|Anormal|Negative|Positive|Trace|No se detecta|Not detected|No detectado|Reactivo|No reactivo)(?:\s*[<>]?\s*\d+)?$'
         
         # Pattern for qualitative results with unit and reference in brackets (e.g., "Filtrado glomerular estimado (CKD-EPI) En curso ml/min/1,73m2 [ > 60]")
         # Handles: NAME QUALITATIVE_VALUE UNIT [ REFERENCE ]
@@ -1136,8 +1145,8 @@ class PDFParser:
         
         # Pattern for qualitative results with unit (e.g., "RED BLOOD CELL COUNT Negativo /µL Negative < 5" or "RED BLOOD CELL COUNT + /μL Negativo")
         # Handles: NAME QUALITATIVE_VALUE UNIT REFERENCE
-        # "+" is a common qualitative value meaning "Positive" or "Present"
-        pattern_qualitative_with_unit = r'^(.+?)\s+(\+|Negative|Positive|Negativo|Positivo|Indicio)\s+([/µ\w]+)\s+(.+)$'
+        # "+", "++", "+++", "++++" are common qualitative values meaning "Positive" or "Present" with varying intensity
+        pattern_qualitative_with_unit = r'^(.+?)\s+(\+{1,4}|Negative|Positive|Negativo|Positivo|Indicio|Trace)\s+([/µ\w]+)\s+(.+)$'
         
         # Pattern for text results (e.g., "URINE MICROSCOPE EXAM Se estudia la muestra...")
         # Handles: NAME [long text result]
@@ -1145,24 +1154,57 @@ class PDFParser:
         
         result = None
         
-        # FIRST: Try qualitative pattern with qualitative reference (e.g., "KETONES Negativo Negativo" or "KETONES Negativo Negative")
-        # This must be checked FIRST to prevent "KETONES Negativo" being captured as name
-        match = re.match(pattern_qualitative_with_qual_ref, line, re.IGNORECASE)
+        # VERY FIRST: Try pattern for symbols only (e.g., "KETONES +++" or "KETONES ++")
+        # This MUST be checked before any other pattern to prevent "KETONES +++" being captured as parameter name
+        match = re.match(pattern_qualitative_symbols_only, line, re.IGNORECASE)
         if match:
             name = match.group(1).strip()
             value = match.group(2).strip()
-            reference = match.group(3).strip()
-            
-            # Translate values
-            value = translate_value(value)
-            reference = translate_value(reference)
             
             result = {
                 'name': name,
-                'value': value,
+                'value': value,  # Keep as "+++" (or translate to "Positive" if needed)
                 'unit': '',
-                'reference': reference
+                'reference': ''
             }
+        
+        # Try pattern for symbols with qualitative reference (e.g., "KETONES +++ Negative")
+        if not result:
+            match = re.match(pattern_qualitative_symbols_with_ref, line, re.IGNORECASE)
+            if match:
+                name = match.group(1).strip()
+                value = match.group(2).strip()
+                reference = match.group(3).strip()
+                
+                # Translate reference
+                reference = translate_value(reference)
+                
+                result = {
+                    'name': name,
+                    'value': value,  # Keep as "+++" 
+                    'unit': '',
+                    'reference': reference
+                }
+        
+        # Try qualitative pattern with qualitative reference (e.g., "KETONES Negativo Negativo" or "KETONES Negativo Negative")
+        # This must be checked early to prevent "KETONES Negativo" being captured as name
+        if not result:
+            match = re.match(pattern_qualitative_with_qual_ref, line, re.IGNORECASE)
+            if match:
+                name = match.group(1).strip()
+                value = match.group(2).strip()
+                reference = match.group(3).strip()
+                
+                # Translate values
+                value = translate_value(value)
+                reference = translate_value(reference)
+                
+                result = {
+                    'name': name,
+                    'value': value,
+                    'unit': '',
+                    'reference': reference
+                }
         
         # Try qualitative pattern with unit and reference in brackets (e.g., "Filtrado glomerular estimado (CKD-EPI) En curso ml/min/1,73m2 [ > 60]")
         # This must be checked BEFORE pattern_with_ref to avoid misparsing
