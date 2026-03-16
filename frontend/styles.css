@@ -673,34 +673,30 @@ body {
     50% { opacity: 0.7; }
 }
 
-/* Result Section — full-width two-pane layout */
+/* Result Section — slides up from bottom to fill the screen */
+@keyframes slideUpPanel {
+    from { transform: translateY(60px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
 .result-section {
     width: 100%;
     max-width: 100%;
     text-align: center;
+    animation: slideUpPanel 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .result-content {
     padding: 0;
-    animation: fadeInUp 0.5s ease;
     width: 100%;
 }
 
-/* Top bar (icon + title + buttons) centred in a narrower band */
-.result-top {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 2.5rem 2rem 1.5rem;
-    text-align: center;
-}
-
-/* Two-pane viewer */
+/* Two-pane viewer — fills all available height below the app header */
 .result-panes {
     display: flex;
     width: 100%;
-    height: calc(100vh - 280px);
+    height: calc(100vh - 82px); /* 82px ≈ header height */
     min-height: 520px;
-    border-top: 1px solid #e0ded8;
 }
 
 .result-pane-preview {
@@ -725,6 +721,7 @@ body {
     justify-content: space-between;
     gap: 8px;
     flex-shrink: 0;
+    position: relative; /* needed for .toolbar-center-label absolute positioning */
 }
 
 .result-pane-preview-scroll {
@@ -779,6 +776,66 @@ body {
     text-align: center;
     letter-spacing: 0.03em;
     font-variant-numeric: tabular-nums;
+}
+
+.toolbar-center-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #555;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.toolbar-right-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.toolbar-sep {
+    width: 1px;
+    height: 16px;
+    background: #d0cec8;
+    flex-shrink: 0;
+}
+
+/* Toolbar action buttons (New file / Download) */
+.toolbar-action-btn {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #fff;
+    color: #444;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.toolbar-action-btn:hover {
+    background: #f0f0ee;
+    border-color: #999;
+    color: #111;
+}
+
+.toolbar-download-btn {
+    background: var(--black);
+    color: #fff;
+    border-color: var(--black);
+}
+
+.toolbar-download-btn:hover {
+    background: #333;
+    border-color: #333;
+    color: #fff;
 }
 
 .pane-resizer {

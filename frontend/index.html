@@ -126,32 +126,32 @@
             <section class="result-section hidden" id="resultSection">
                 <div class="result-content">
 
-                    <!-- ── Top bar ── -->
-                    <div class="result-top">
-                        <svg class="success-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="24" cy="24" r="20"/>
-                            <polyline points="16,24 22,30 32,18"/>
-                        </svg>
-                        <h2 class="result-title">Report generated</h2>
-                        <p class="result-text" id="resultText">The microbiome PDF report has been generated successfully.</p>
-                        <div class="action-buttons">
-                            <button class="download-btn" id="downloadPdfBtn">↓ &nbsp;Download PDF</button>
-                            <button class="back-btn" onclick="resetApp()">← &nbsp;New file</button>
-                        </div>
-                    </div>
-
                     <!-- ── Two-pane viewer ── -->
                     <div class="result-panes" id="resultPanes">
 
                         <!-- Left — PDF preview -->
                         <div class="result-pane-preview" id="panePreview">
                             <div class="result-pane-preview-label">
-                                <span>Report preview</span>
-                                <div class="zoom-controls">
-                                    <button class="zoom-btn" onclick="changeZoom(-0.15)" title="Zoom out">−</button>
-                                    <span class="zoom-level" id="zoomLabel">100%</span>
-                                    <button class="zoom-btn" onclick="changeZoom(+0.15)" title="Zoom in">+</button>
-                                    <button class="zoom-btn zoom-reset" onclick="resetZoom()" title="Fit to width">⊡</button>
+                                <!-- Left: back to upload -->
+                                <button class="toolbar-action-btn" onclick="resetApp()" title="New file">
+                                    ← New file
+                                </button>
+
+                                <!-- Center: label -->
+                                <span class="toolbar-center-label">Report preview</span>
+
+                                <!-- Right: zoom + download -->
+                                <div class="toolbar-right-group">
+                                    <div class="zoom-controls">
+                                        <button class="zoom-btn" onclick="changeZoom(-0.15)" title="Zoom out">−</button>
+                                        <span class="zoom-level" id="zoomLabel">100%</span>
+                                        <button class="zoom-btn" onclick="changeZoom(+0.15)" title="Zoom in">+</button>
+                                        <button class="zoom-btn zoom-reset" onclick="resetZoom()" title="Fit to width">⊡</button>
+                                    </div>
+                                    <div class="toolbar-sep"></div>
+                                    <button class="toolbar-action-btn toolbar-download-btn" id="downloadPdfBtn" title="Download PDF">
+                                        ↓ Download PDF
+                                    </button>
                                 </div>
                             </div>
                             <div class="result-pane-preview-scroll" id="pdfCanvasContainer">
@@ -378,9 +378,6 @@
                     a.download = pdfFilename;
                     a.click();
                 };
-
-                document.getElementById('resultText').textContent =
-                    `Report generated${sheetName ? ' — sheet: ' + sheetName : ''}.`;
 
                 showSection('result');
 
