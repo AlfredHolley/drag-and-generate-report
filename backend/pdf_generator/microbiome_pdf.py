@@ -343,10 +343,14 @@ class MicrobiomePDFGenerator:
     T_MARGIN = 72   # room for running header
     B_MARGIN = 52   # room for footer
 
-    def __init__(self, df: pd.DataFrame, comments: dict | None = None):
+    def __init__(self, df: pd.DataFrame,
+                 comments: dict | None = None,
+                 cited_params: set | None = None):
         self.df = df.copy()
         # comments: {page_number (int) → comment_text (str)}
         self.comments: dict = {int(k): str(v) for k, v in (comments or {}).items()}
+        # cited_params: set of cleaned parameter names tagged with @[...] in comments
+        self.cited_params: set = set(cited_params) if cited_params else set()
 
         # Resolve asset paths — works both locally and inside Docker.
         # Local:  repo/backend/pdf_generator/  → ../../fonts  &  ../../frontend/logo_bw.svg
@@ -620,6 +624,24 @@ class MicrobiomePDFGenerator:
         s = re.sub(r'\s*\[[A-Z0-9_]+\]\s*$', '', s).strip()
         return s
 
+    @staticmethod
+    def extract_parameters(df: pd.DataFrame) -> list:
+        """Return a sorted list of unique cleaned parameter names from *df*.
+
+        Strips leading '- ' child-row markers and [CODE] suffixes so that
+        the list shown to doctors matches what appears in the PDF tables.
+        Generalist: works with any DataFrame that contains an 'Ensayo' column.
+        """
+        params: set = set()
+        col = df['Ensayo'] if 'Ensayo' in df.columns else pd.Series(dtype=str)
+        for val in col:
+            cleaned = MicrobiomePDFGenerator._clean_param(val)
+            # Strip child-row indent marker so doctors see clean names
+            name = cleaned.lstrip('- ').strip()
+            if name:
+                params.add(name)
+        return sorted(params, key=str.lower)
+
     def _result(self, row) -> str:  # noqa: ANN001
         r1 = self._clean(row.get('Resultado1', ''))
         r2 = self._clean(row.get('Resultado2', ''))
@@ -729,17 +751,23 @@ class MicrobiomePDFGenerator:
                 leading=11, textColor=DARK_GRAY, alignment=TA_CENTER)
 
             # ── Status symbol cell ────────────────────────────────────────────
+            # Append ✉ if this parameter is tagged in a doctor comment (@[name])
+            param_key   = param.lstrip('- ').strip()
+            cited_mark  = ' \u2709' if param_key in self.cited_params else ''
+            sym_display = (sym + cited_mark) if sym else cited_mark
+
+            # Use Calibri for better Unicode coverage (✉ U+2709 is in Calibri)
             sym_ps = ParagraphStyle(
-                f'_sp{i}', fontName=fr, fontSize=9,
+                f'_sp{i}', fontName=self._f('Calibri'), fontSize=9,
                 leading=11, textColor=tc if tc else DARK_GRAY,
                 alignment=TA_CENTER)
 
             tdata.append([
-                Paragraph(param,  param_ps),
-                Paragraph(result, val_ps),
-                Paragraph(unit,   ctr_ps),
-                Paragraph(ref,    ctr_ps),
-                Paragraph(sym,    sym_ps),
+                Paragraph(param,       param_ps),
+                Paragraph(result,      val_ps),
+                Paragraph(unit,        ctr_ps),
+                Paragraph(ref,         ctr_ps),
+                Paragraph(sym_display, sym_ps),
             ])
 
             # ── Row background ────────────────────────────────────────────────
@@ -903,6 +931,9 @@ class MicrobiomePDFGenerator:
 
 # ── Convenience wrapper ────────────────────────────────────────────────────────
 
-def generate_microbiome_pdf(df: pd.DataFrame, comments: dict | None = None) -> bytes:
+def generate_microbiome_pdf(df: pd.DataFrame,
+                            comments: dict | None = None,
+                            cited_params: set | None = None) -> bytes:
     """Generate a microbiome PDF from *df* and return the raw PDF bytes."""
-    return MicrobiomePDFGenerator(df, comments=comments).generate()
+    return MicrobiomePDFGenerator(df, comments=comments,
+                                  cited_params=cited_params).generate()

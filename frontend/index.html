@@ -127,6 +127,20 @@
                                      style="text-align:center;padding:10px;font-size:0.78rem;color:#888;">
                                     Generating…
                                 </div>
+
+                                <!-- ── Report parameters list ── -->
+                                <div style="margin-top:20px;border-top:1px solid #e0ded8;padding-top:14px;">
+                                    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#555;margin-bottom:4px;">
+                                        Report parameters
+                                    </div>
+                                    <div style="font-size:0.7rem;color:#999;margin-bottom:8px;">
+                                        Type <strong style="color:#2a6496;">@</strong> in the comment field to tag a parameter
+                                    </div>
+                                    <div id="paramsList"
+                                         style="max-height:240px;overflow-y:auto;border:1px solid #e0ded8;border-radius:3px;background:#fff;padding:2px;">
+                                        <span style="display:block;padding:8px;color:#bbb;font-size:0.72rem;">No file loaded yet</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -199,6 +213,12 @@
 
     </div>
 
+    <!-- @mention parameter dropdown (position:fixed, managed by JS) -->
+    <div id="mentionDropdown" class="hidden"
+         style="position:fixed;z-index:99999;background:#fff;border:1px solid #b8d4e8;
+                border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.14);
+                max-height:200px;overflow-y:auto;min-width:220px;"></div>
+
     <script>
         const dropZone   = document.getElementById('dropZone');
         const fileInput  = document.getElementById('fileInput');
@@ -206,11 +226,12 @@
         const dropFilename = document.getElementById('dropFilename');
         const convertBtn = document.getElementById('convertBtn');
 
-        let selectedFile  = null;
-        let pdfBlob       = null;
-        let pdfBlobUrl    = null;   // kept alive for preview + download
-        let pdfFilename   = 'report.pdf';
-        let doctorComments = {};    // {pageNum (int): commentText (str)}
+        let selectedFile    = null;
+        let pdfBlob         = null;
+        let pdfBlobUrl      = null;   // kept alive for preview + download
+        let pdfFilename     = 'report.pdf';
+        let doctorComments  = {};     // {pageNum (int): commentText (str)}
+        let parametersCache = [];     // list of parameter names from the loaded file
 
         // ── Drag & Drop ──────────────────────────────────────────────────
         dropZone.addEventListener('click', () => fileInput.click());
@@ -248,6 +269,8 @@
             dropFilename.textContent = `${(file.size / 1024).toFixed(1)} KB`;
             dropFilename.classList.remove('hidden');
             convertBtn.classList.remove('hidden');
+            // Pre-load parameter list in background for the @mention feature
+            loadParameters(file);
         }
 
         // ── Progress helpers ─────────────────────────────────────────────
@@ -400,8 +423,9 @@
         }
 
         function resetApp() {
-            selectedFile  = pdfBlob = null;
-            doctorComments = {};
+            selectedFile    = pdfBlob = null;
+            doctorComments  = {};
+            parametersCache = [];
             if (pdfBlobUrl) { URL.revokeObjectURL(pdfBlobUrl); pdfBlobUrl = null; }
             fileInput.value = '';
             dropZone.classList.remove('has-file', 'drag-over');
@@ -412,6 +436,7 @@
             document.getElementById('pdfCanvasContainer').innerHTML = '';
             document.getElementById('commentsList').innerHTML = '';
             document.getElementById('regenBtn').classList.add('hidden');
+            renderParamsList();   // reset to "No file loaded"
             showSection('upload');
         }
 
@@ -472,6 +497,124 @@
             return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         }
 
+        // ── Parameters list + @mention ──────────────────────────────────────
+
+        async function loadParameters(file) {
+            try {
+                const fd = new FormData();
+                fd.append('file', file);
+                const resp = await fetch('/api/parameters', { method: 'POST', body: fd });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    parametersCache = data.parameters || [];
+                    renderParamsList();
+                }
+            } catch (e) { /* silent — non-blocking */ }
+        }
+
+        function renderParamsList() {
+            const el = document.getElementById('paramsList');
+            if (!el) return;
+            if (!parametersCache.length) {
+                el.innerHTML = '<span style="display:block;padding:8px;color:#bbb;font-size:0.72rem;">No file loaded yet</span>';
+                return;
+            }
+            el.innerHTML = '';
+            parametersCache.forEach(p => {
+                const div = document.createElement('div');
+                div.textContent = p;
+                div.title = `Click to insert @[${p}]`;
+                div.style.cssText = 'padding:5px 8px;cursor:pointer;font-size:0.75rem;color:#333;' +
+                    'border-bottom:1px solid #f4f3f0;display:flex;align-items:center;gap:5px;';
+                const at = document.createElement('span');
+                at.textContent = '@';
+                at.style.cssText = 'color:#2a6496;font-weight:700;font-size:0.7rem;flex-shrink:0;';
+                div.prepend(at);
+                div.addEventListener('mouseover',  () => div.style.background = '#edf4f8');
+                div.addEventListener('mouseout',   () => div.style.background = '');
+                div.addEventListener('mousedown',  () => insertParamTag(p));
+                el.appendChild(div);
+            });
+        }
+
+        function insertParamTag(name) {
+            const ta = document.getElementById('commentText');
+            const pos    = ta.selectionStart;
+            const before = ta.value.slice(0, pos);
+            const after  = ta.value.slice(pos);
+            // Replace partial @query if cursor is right after one; otherwise insert
+            const atIdx = before.lastIndexOf('@');
+            const afterAt = before.slice(atIdx + 1);
+            const isPartial = atIdx !== -1 && !afterAt.includes(' ') &&
+                              !afterAt.includes('\n') && !afterAt.includes(']');
+            const insertion = `@[${name}]`;
+            if (isPartial) {
+                ta.value = before.slice(0, atIdx) + insertion + after;
+                ta.selectionStart = ta.selectionEnd = atIdx + insertion.length;
+            } else {
+                ta.value = before + insertion + after;
+                ta.selectionStart = ta.selectionEnd = pos + insertion.length;
+            }
+            ta.focus();
+            hideMentionDD();
+        }
+
+        // ── @mention dropdown ───────────────────────────────────────────────
+
+        function setupMentionDD() {
+            const ta = document.getElementById('commentText');
+            if (!ta) return;
+
+            ta.addEventListener('input', function () {
+                const pos    = this.selectionStart;
+                const before = this.value.slice(0, pos);
+                const atIdx  = before.lastIndexOf('@');
+                if (atIdx !== -1) {
+                    const query    = before.slice(atIdx + 1);
+                    const noSpace  = !query.includes(' ') && !query.includes('\n') && !query.includes(']');
+                    if (noSpace) {
+                        const filtered = parametersCache
+                            .filter(p => p.toLowerCase().includes(query.toLowerCase()))
+                            .slice(0, 12);
+                        if (filtered.length) { showMentionDD(filtered, this); return; }
+                    }
+                }
+                hideMentionDD();
+            });
+
+            ta.addEventListener('keydown', e => { if (e.key === 'Escape') hideMentionDD(); });
+            ta.addEventListener('blur',    () => setTimeout(hideMentionDD, 160));
+        }
+
+        function showMentionDD(items, textarea) {
+            const dd   = document.getElementById('mentionDropdown');
+            const rect = textarea.getBoundingClientRect();
+            dd.style.left  = rect.left  + 'px';
+            dd.style.top   = (rect.bottom + 3) + 'px';
+            dd.style.width = rect.width + 'px';
+            dd.innerHTML   = '';
+            items.forEach(p => {
+                const div = document.createElement('div');
+                div.style.cssText = 'padding:7px 10px;cursor:pointer;font-size:0.8rem;color:#222;' +
+                    'border-bottom:1px solid #f0eff0;display:flex;align-items:center;gap:6px;';
+                const at = document.createElement('span');
+                at.textContent = '@';
+                at.style.cssText = 'color:#2a6496;font-weight:700;';
+                const txt = document.createElement('span');
+                txt.textContent = p;
+                div.append(at, txt);
+                div.addEventListener('mouseover', () => div.style.background = '#e8f4f8');
+                div.addEventListener('mouseout',  () => div.style.background = '');
+                div.addEventListener('mousedown', () => insertParamTag(p));
+                dd.appendChild(div);
+            });
+            dd.classList.remove('hidden');
+        }
+
+        function hideMentionDD() {
+            document.getElementById('mentionDropdown').classList.add('hidden');
+        }
+
         async function regenerateWithComments() {
             if (!selectedFile) return;
 
@@ -514,6 +657,11 @@
                 regenBtn.classList.remove('hidden');
             }
         }
+
+        // Init @mention wiring once DOM is ready
+        document.addEventListener('DOMContentLoaded', setupMentionDD);
+        // Also wire immediately (script runs at end of body, DOM already available)
+        setupMentionDD();
     </script>
 </body>
 </html>

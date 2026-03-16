@@ -13,7 +13,7 @@ import pandas as pd
 from flask import Flask, request, Response, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-from pdf_generator.microbiome_pdf import generate_microbiome_pdf
+from pdf_generator.microbiome_pdf import generate_microbiome_pdf, MicrobiomePDFGenerator
 
 # Le dossier frontend est un niveau au-dessus du backend
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), '..', 'frontend')
@@ -136,6 +136,48 @@ def convert_xlsx_to_csv():
         return jsonify({'error': f'Erreur lors de la conversion : {str(e)}'}), 500
 
 
+@app.route('/api/parameters', methods=['POST'])
+def list_parameters():
+    """
+    Return the list of unique parameter names present in an XLSX/XLS file.
+
+    Body (multipart/form-data):
+        file        : The Excel file
+        sheet_name  : (optional) Sheet index or name (default: first sheet)
+
+    Response:
+        JSON  {"parameters": ["...", ...]}   — sorted alphabetically
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'Unsupported format. Use .xlsx or .xls'}), 400
+
+    sheet_param = request.form.get('sheet_name', 0)
+    try:
+        sheet_param = int(sheet_param)
+    except (ValueError, TypeError):
+        pass
+
+    try:
+        file_bytes = file.read()
+        xl_file    = pd.ExcelFile(io.BytesIO(file_bytes), engine='openpyxl')
+
+        if isinstance(sheet_param, int):
+            sheet_name = xl_file.sheet_names[min(sheet_param, len(xl_file.sheet_names) - 1)]
+        else:
+            sheet_name = sheet_param if sheet_param in xl_file.sheet_names else xl_file.sheet_names[0]
+
+        df     = xl_file.parse(sheet_name)
+        params = MicrobiomePDFGenerator.extract_parameters(df)
+        return jsonify({'parameters': params, 'count': len(params)})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/generate-pdf', methods=['POST'])
 def generate_pdf():
     """
@@ -196,8 +238,16 @@ def generate_pdf():
         except Exception:
             comments = {}
 
+        # Extract @[Parameter Name] citations from all comment texts
+        import re as _re
+        cited_params: set = set()
+        for text in comments.values():
+            for match in _re.findall(r'@\[([^\]]+)\]', str(text)):
+                cited_params.add(match.strip())
+
         # Génération du PDF
-        pdf_bytes = generate_microbiome_pdf(df, comments=comments)
+        pdf_bytes = generate_microbiome_pdf(df, comments=comments,
+                                            cited_params=cited_params or None)
 
         # Nom de fichier de sortie
         base_name = secure_filename(file.filename).rsplit('.', 1)[0]
