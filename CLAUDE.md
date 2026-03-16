@@ -86,31 +86,22 @@ npx http-server -p 8000
 
 ## CSV Format
 
-The CSV file should follow this structure:
-- Row 1: Header information (optional)
-- Row 2: Patient name (optional)
-- Row 3: Column headers with analysis IDs
-- Row 4: Date values for each column
-- Row 5+: Category rows (first column contains category name) and parameter rows (first column empty, second column contains parameter name)
+The XLSX is a microbiote analysis from a patient. 
+
 
 Example:
-```csv
-,Analisis,ID V7169825,ID T2436216,Unidad
-,,09/01/2026,15/10/2025,
-Hematología y Hemostasia,,,,,
-,Hematíes,4.69,4.49,x10⁶/mm³
-,Hemoglobina,14.5,13.6,g/dL
-```
+
+A CSV is here as example to show you how looks like the data. 
+as you can see the flat format is not appropriate. The Microbiote analysis results is composed of Phylum, Genus levels etc. You're the expert.
+Also, you have to consider that the exact content may variate. The structure not. 
+
+in @example_pdf, you can take inspiration on design, layout, for the final output : a polished PDF medical report showing all the Microbiote data. 
+
+Do rules and code based on structure, not on the exact content !
+
+
 
 ## Configuration
-
-### Categories
-
-Edit `backend/config/categories.json` to modify category names, ordering, and explanations.
-
-### Parameters
-
-Edit `backend/config/parameters.json` to add parameter mappings, English names, units, and explanations.
 
 ## API Endpoints
 

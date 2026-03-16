@@ -243,6 +243,52 @@ body {
     box-shadow: 0 0 0 3px rgba(22, 186, 222, 0.1);
 }
 
+.clinical-measurement-btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border: 2px solid var(--black);
+    background: var(--white);
+    color: var(--black);
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.clinical-measurement-btn:hover {
+    border-color: var(--cyan-hex);
+    background: var(--cyan-hex);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.clinical-measurement-btn:active {
+    transform: translateY(0);
+}
+
+.clinical-measurement-btn.active {
+    background: var(--cyan-hex);
+    color: var(--white);
+    border-color: var(--cyan-hex);
+}
+
+.clinical-measurement-label {
+    font-size: 0.9rem;
+}
+
+.clinical-measurement-status {
+    font-size: 1.1rem;
+    font-weight: 700;
+    min-width: 1.2rem;
+    text-align: center;
+}
+
 .drop-zones-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -348,6 +394,115 @@ body {
     font-size: 1rem;
     color: var(--gray);
     font-weight: 300;
+}
+
+/* Clinical Measurement Upload Zone */
+.clinical-measurement-upload {
+    width: 100%;
+    max-width: 400px;
+    margin: 2rem auto 0;
+    transition: opacity 0.3s ease;
+}
+
+.clinical-measurement-upload.hidden {
+    display: none;
+}
+
+.clinical-drop-zone {
+    border: 2px dashed rgba(0, 0, 0, 0.3);
+    border-radius: 0;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    background: rgba(248, 252, 252, 0.5);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clinical-drop-zone.has-file {
+    border-color: var(--cyan-hex);
+    background: rgba(22, 186, 222, 0.08);
+}
+
+.clinical-drop-zone.has-file .clinical-drop-title {
+    color: var(--cyan-hex);
+}
+
+.clinical-drop-zone:hover {
+    border-color: var(--cyan-hex);
+    background: rgba(248, 252, 252, 0.8);
+    transform: translateY(-1px);
+}
+
+.clinical-drop-zone.drag-over {
+    border-color: var(--cyan-hex);
+    background: rgba(22, 186, 222, 0.1);
+    transform: scale(1.01);
+}
+
+.clinical-drop-zone-content {
+    position: relative;
+    z-index: 1;
+}
+
+.clinical-drop-icon {
+    width: 32px;
+    height: 32px;
+    margin: 0 auto 0.75rem;
+    stroke: var(--black);
+    opacity: 0.6;
+    transition: stroke 0.3s, opacity 0.3s;
+}
+
+.clinical-drop-zone:hover .clinical-drop-icon {
+    stroke: var(--cyan-hex);
+    opacity: 1;
+}
+
+.clinical-drop-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.01em;
+}
+
+.clinical-drop-zone-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.clinical-drop-zone-filename {
+    font-size: 0.75rem;
+    color: var(--cyan-hex);
+    margin-top: 0.5rem;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.clinical-drop-text {
+    font-size: 0.85rem;
+    color: var(--gray);
+    font-weight: 300;
+    margin-bottom: 0.25rem;
+}
+
+.clinical-drop-hint {
+    font-size: 0.7rem;
+    color: rgba(0, 0, 0, 0.2);
+    font-weight: 300;
+    font-style: italic;
+    margin-top: 0.5rem;
+    letter-spacing: 0.02em;
 }
 
 /* Steps Section - Always visible at bottom before footer */
