@@ -527,7 +527,7 @@ class MicrobiomePDFGenerator:
             ('ALIGN',         (0, 0), (0, -1),  'LEFT'),
             ('ALIGN',         (1, 0), (-1, -1), 'CENTER'),
             # Subtle row separator
-            ('LINEBELOW',     (0, 1), (-1, -1), 0.3, TABLE_SEP),
+            ('LINEBELOW',     (0, 1), (-1, -1), 0.05, TABLE_SEP),
         ])
         for cmd in bg_cmds:
             style.add(*cmd)
