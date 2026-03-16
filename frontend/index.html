@@ -67,77 +67,70 @@
             <!-- Result Section -->
             <section class="result-section hidden" id="resultSection">
                 <div class="result-content">
-                    <svg class="success-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="24" cy="24" r="20"/>
-                        <polyline points="16,24 22,30 32,18"/>
-                    </svg>
-                    <h2 class="result-title">Report generated</h2>
-                    <p class="result-text" id="resultText">The microbiome PDF report has been generated successfully.</p>
 
-                    <!-- Action buttons -->
-                    <div class="action-buttons" style="margin-top: 1.5rem;">
-                        <button class="download-btn" id="downloadPdfBtn" style="font-size:1rem;padding:0.85rem 2rem;">
-                            ↓ &nbsp;Download PDF
-                        </button>
-                        <button class="back-btn" onclick="resetApp()">
-                            ← &nbsp;New file
-                        </button>
+                    <!-- ── Top bar ── -->
+                    <div class="result-top">
+                        <svg class="success-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="24" cy="24" r="20"/>
+                            <polyline points="16,24 22,30 32,18"/>
+                        </svg>
+                        <h2 class="result-title">Report generated</h2>
+                        <p class="result-text" id="resultText">The microbiome PDF report has been generated successfully.</p>
+                        <div class="action-buttons">
+                            <button class="download-btn" id="downloadPdfBtn">↓ &nbsp;Download PDF</button>
+                            <button class="back-btn" onclick="resetApp()">← &nbsp;New file</button>
+                        </div>
                     </div>
 
-                    <!-- PDF Preview + Doctor Comments (side-by-side) -->
-                    <div style="display:flex; gap:16px; margin:2rem 0; align-items:flex-start;">
+                    <!-- ── Two-pane viewer ── -->
+                    <div class="result-panes">
 
-                        <!-- PDF canvas area -->
-                        <div style="flex:1; min-width:0;">
-                            <p style="font-size:0.85rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem;color:var(--dark-gray);">
-                                Report preview
-                            </p>
-                            <div id="pdfCanvasContainer"
-                                 style="background:#e8e8e8;padding:6px;max-height:740px;overflow-y:auto;border:2px solid var(--black);box-sizing:border-box;">
+                        <!-- Left — PDF preview -->
+                        <div class="result-pane-preview">
+                            <div class="result-pane-preview-label">Report preview</div>
+                            <div class="result-pane-preview-scroll" id="pdfCanvasContainer">
                                 <!-- PDF pages rendered as <canvas> elements by PDF.js -->
                             </div>
                         </div>
 
-                        <!-- Doctor Comments panel -->
-                        <div id="doctorCommentsPanel"
-                             style="width:260px;flex-shrink:0;border:1px solid #d4d2cb;border-radius:4px;padding:14px;background:#fafaf8;box-sizing:border-box;">
+                        <!-- Right — Doctor Comments -->
+                        <div class="result-pane-comments" id="doctorCommentsPanel">
+                            <div class="result-pane-comments-label">Doctor comments</div>
+                            <div class="result-pane-comments-body">
 
-                            <p style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#555;margin:0 0 12px;">
-                                Add&nbsp;Comments
-                            </p>
+                                <!-- Page number -->
+                                <label style="font-size:0.72rem;color:#777;display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Page number</label>
+                                <input id="commentPage" type="number" min="1" placeholder="e.g. 3"
+                                       style="width:100%;padding:8px 10px;font-size:1rem;font-weight:600;border:2px solid #ccc;border-radius:3px;box-sizing:border-box;margin-bottom:14px;color:#222;"/>
 
-                            <!-- Page number -->
-                            <label style="font-size:0.72rem;color:#777;display:block;margin-bottom:3px;">Page&nbsp;number</label>
-                            <input id="commentPage" type="number" min="1" placeholder="e.g. 3"
-                                   style="width:100%;padding:5px 7px;font-size:0.82rem;border:1px solid #ccc;border-radius:3px;box-sizing:border-box;margin-bottom:10px;"/>
+                                <!-- Comment text -->
+                                <label style="font-size:0.72rem;color:#777;display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Comment</label>
+                                <textarea id="commentText" rows="5" placeholder="Enter doctor note…"
+                                          style="width:100%;padding:8px 10px;font-size:0.88rem;border:2px solid #ccc;border-radius:3px;box-sizing:border-box;resize:vertical;margin-bottom:12px;font-family:inherit;"></textarea>
 
-                            <!-- Comment text -->
-                            <label style="font-size:0.72rem;color:#777;display:block;margin-bottom:3px;">Comment</label>
-                            <textarea id="commentText" rows="4" placeholder="Enter doctor note…"
-                                      style="width:100%;padding:5px 7px;font-size:0.82rem;border:1px solid #ccc;border-radius:3px;box-sizing:border-box;resize:vertical;margin-bottom:10px;font-family:inherit;"></textarea>
+                                <button onclick="addComment()"
+                                        style="width:100%;padding:9px;font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;background:var(--black);color:#fff;border:none;border-radius:3px;cursor:pointer;margin-bottom:16px;">
+                                    + &nbsp;Add comment
+                                </button>
 
-                            <button onclick="addComment()"
-                                    style="width:100%;padding:7px;font-size:0.8rem;background:var(--black);color:#fff;border:none;border-radius:3px;cursor:pointer;margin-bottom:12px;">
-                                + &nbsp;Add comment
-                            </button>
+                                <!-- List of pending comments -->
+                                <div id="commentsList" style="font-size:0.78rem;color:#555;"></div>
 
-                            <!-- List of pending comments -->
-                            <div id="commentsList" style="font-size:0.75rem;color:#555;"></div>
+                                <!-- Regenerate -->
+                                <button id="regenBtn" onclick="regenerateWithComments()" class="hidden"
+                                        style="width:100%;padding:9px;font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;background:#1a5276;color:#fff;border:none;border-radius:3px;cursor:pointer;margin-top:10px;">
+                                    ↻ &nbsp;Regenerate with comments
+                                </button>
 
-                            <!-- Regenerate -->
-                            <button id="regenBtn" onclick="regenerateWithComments()" class="hidden"
-                                    style="width:100%;padding:7px;font-size:0.8rem;background:#2a6496;color:#fff;border:none;border-radius:3px;cursor:pointer;margin-top:8px;">
-                                ↻ &nbsp;Regenerate with comments
-                            </button>
-
-                            <!-- Regen spinner -->
-                            <div id="regenSpinner" class="hidden"
-                                 style="text-align:center;padding:8px;font-size:0.75rem;color:#888;">
-                                Generating…
+                                <!-- Regen spinner -->
+                                <div id="regenSpinner" class="hidden"
+                                     style="text-align:center;padding:10px;font-size:0.78rem;color:#888;">
+                                    Generating…
+                                </div>
                             </div>
                         </div>
 
-                    </div><!-- end flex row -->
+                    </div><!-- end .result-panes -->
                 </div>
             </section>
 

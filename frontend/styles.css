@@ -630,16 +630,97 @@ body {
     50% { opacity: 0.7; }
 }
 
-/* Result Section */
+/* Result Section — full-width two-pane layout */
 .result-section {
     width: 100%;
-    max-width: 900px;
+    max-width: 100%;
     text-align: center;
 }
 
 .result-content {
-    padding: 2rem;
+    padding: 0;
     animation: fadeInUp 0.5s ease;
+    width: 100%;
+}
+
+/* Top bar (icon + title + buttons) centred in a narrower band */
+.result-top {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 1.5rem;
+    text-align: center;
+}
+
+/* Two-pane viewer */
+.result-panes {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 280px);
+    min-height: 520px;
+    border-top: 1px solid #e0ded8;
+}
+
+.result-pane-preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e0ded8;
+    overflow: hidden;
+}
+
+.result-pane-preview-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #555;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e0ded8;
+    background: #fafaf8;
+    flex-shrink: 0;
+}
+
+.result-pane-preview-scroll {
+    flex: 1;
+    overflow-y: auto;
+    background: #e4e3dd;
+    padding: 8px;
+}
+
+.result-pane-comments {
+    width: 50%;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: #fafaf8;
+    overflow: hidden;
+}
+
+.result-pane-comments-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #555;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e0ded8;
+    background: #fafaf8;
+    flex-shrink: 0;
+}
+
+.result-pane-comments-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+@media (max-width: 768px) {
+    .result-panes {
+        flex-direction: column;
+        height: auto;
+    }
+    .result-pane-preview { min-height: 400px; }
+    .result-pane-comments { width: 100%; border-top: 1px solid #e0ded8; }
 }
 
 @keyframes fadeInUp {

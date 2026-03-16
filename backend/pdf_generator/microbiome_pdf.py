@@ -550,18 +550,21 @@ class MicrobiomePDFGenerator:
         canvas.drawRightString(w - self.R_MARGIN, h - 42,
                                f'Report N° {self.report_number}')
 
-        # Footer
+        # Footer — client name left, page number right (larger + darker for readability)
         canvas.setFont(self._f('VistaSans-Light'), 7.5)
         canvas.setFillColor(MID_GRAY)
         canvas.drawString(self.L_MARGIN, 22, self.client)
-        canvas.drawRightString(w - self.R_MARGIN, 22, str(doc.page))
+        canvas.setFont(self._f('Calibri'), 9)
+        canvas.setFillColor(DARK_GRAY)
+        canvas.drawRightString(w - self.R_MARGIN, 21, str(doc.page))
 
         # ── Doctor comment box (if any for this page) ─────────────────────
+        # Placed just above the footer line (footer text at y≈22, footer rule at y≈36)
         comment = self.comments.get(doc.page, '')
         if comment:
-            box_pad = 4
-            box_h   = 46
-            box_y   = self.B_MARGIN - box_h - 2
+            box_pad = 5
+            box_h   = 48
+            box_y   = 38          # bottom edge sits 38pt from page bottom, well above footer
             box_x   = self.L_MARGIN
             box_w   = w - self.L_MARGIN - self.R_MARGIN
 
