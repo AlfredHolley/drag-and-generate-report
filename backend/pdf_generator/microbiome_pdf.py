@@ -155,11 +155,15 @@ class MicrobiomePDFGenerator:
     def __init__(self, df: pd.DataFrame):
         self.df = df.copy()
 
-        # Resolve asset paths relative to this file
-        _base = os.path.dirname(os.path.abspath(__file__))
-        self._fonts_dir = os.path.normpath(os.path.join(_base, '..', '..', 'fonts'))
-        self._logo_path = os.path.normpath(
-            os.path.join(_base, '..', '..', 'frontend', 'logo_bw.svg'))
+        # Resolve asset paths — works both locally and inside Docker.
+        # Local:  repo/backend/pdf_generator/  → ../../fonts  &  ../../frontend/logo_bw.svg
+        # Docker: backend/ copied to /app/     →  /app/fonts  &  /app/logo_bw.svg
+        _base        = os.path.dirname(os.path.abspath(__file__))
+        _repo        = os.path.normpath(os.path.join(_base, '..', '..'))
+        _fonts_local = os.path.join(_repo, 'fonts')
+        _logo_local  = os.path.join(_repo, 'frontend', 'logo_bw.svg')
+        self._fonts_dir = _fonts_local  if os.path.isdir(_fonts_local)   else '/app/fonts'
+        self._logo_path = _logo_local   if os.path.exists(_logo_local)   else '/app/logo_bw.svg'
 
         self._extract_patient_info()
         self._register_fonts()
