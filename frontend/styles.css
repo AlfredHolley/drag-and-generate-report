@@ -505,23 +505,19 @@ body {
     letter-spacing: 0.02em;
 }
 
-/* Steps Section - Always visible at bottom before footer */
+/* Steps Section — lives inside the upload section, shown only before generation */
 .steps-section {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     gap: 3rem;
-    margin-top: 0;
-    padding: 3rem 2rem;
+    margin-top: 3rem;
+    padding: 2.5rem 2rem;
     flex-wrap: nowrap;
     background: #ecebe5;
+    border-radius: 6px;
     width: 100%;
-    /* Always visible, not affected by section hiding */
-    position: relative;
-    z-index: 1;
-    /* Ensure it's always displayed */
-    visibility: visible !important;
-    display: flex !important;
+    box-sizing: border-box;
 }
 
 .step-item {
