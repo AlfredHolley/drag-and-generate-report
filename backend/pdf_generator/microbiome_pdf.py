@@ -130,9 +130,9 @@ SUBSECTION_MAP: dict = {
             "fermentation of dietary fibres. Butyrate is the primary energy source for "
             "colonocytes and has anti-inflammatory properties. An excess of putrefactive "
             "SCFAs (valeric, iso-butyric, iso-valeric) indicates protein over-fermentation.",
-            # Multiple triggers: covers both the summary row and the putrefactive sub-group
-            # that may appear separately in the raw data after other triggers.
-            ["TOTAL SCFA", "SCFA Putrefactive"],
+            # Multiple triggers: covers the summary rows and sub-groups that may
+            # appear non-contiguously in the raw data (e.g. after the Parasites trigger).
+            ["TOTAL SCFA", "SCFA Beneficial", "SCFA Putrefactive", "Protein SCFAs"],
         ),
         (
             "Parasites & Helminths",
@@ -625,8 +625,9 @@ class MicrobiomePDFGenerator:
         s = str(val).strip()
         if s in ('', 'nan', 'None'):
             return ''
-        # Remove any trailing [CODE] identifiers (e.g. [FUNG], [BAC], etc.)
-        s = re.sub(r'\s*\[[A-Z0-9_]+\]\s*$', '', s).strip()
+        # Remove any trailing [CODE] identifiers (e.g. [FUNG], [SCFA Bene], [a-Glucosi], etc.)
+        # Uses a broad pattern to handle codes with spaces, mixed case, hyphens, etc.
+        s = re.sub(r'\s*\[[^\[\]]+\]\s*$', '', s).strip()
         return s
 
     @staticmethod
@@ -750,9 +751,14 @@ class MicrobiomePDFGenerator:
                 f'_vp{i}', fontName=self._f('Calibri'), fontSize=val_font_size,
                 leading=val_font_size + 2, textColor=BLACK, alignment=TA_CENTER)
 
-            # ── Unit / ref range cells ────────────────────────────────────────
+            # ── Unit cell (VistaSans-Light) ───────────────────────────────────
             ctr_ps = ParagraphStyle(
                 f'_cp{i}', fontName=fl, fontSize=8.5,
+                leading=11, textColor=DARK_GRAY, alignment=TA_CENTER)
+
+            # ── Reference range cell (Calibri) ────────────────────────────────
+            ref_ps = ParagraphStyle(
+                f'_rp{i}', fontName=self._f('Calibri'), fontSize=8.5,
                 leading=11, textColor=DARK_GRAY, alignment=TA_CENTER)
 
             # ── Status symbol cell ────────────────────────────────────────────
@@ -771,7 +777,7 @@ class MicrobiomePDFGenerator:
                 Paragraph(param,       param_ps),
                 Paragraph(result,      val_ps),
                 Paragraph(unit,        ctr_ps),
-                Paragraph(ref,         ctr_ps),
+                Paragraph(ref,         ref_ps),
                 Paragraph(sym_display, sym_ps),
             ])
 
@@ -789,7 +795,7 @@ class MicrobiomePDFGenerator:
         style = TableStyle([
             # Header row
             ('BACKGROUND',    (0, 0), (-1, 0), WHITE),
-            ('LINEBELOW',     (0, 0), (-1, 0), 0.8, DARK_GRAY),
+            ('LINEBELOW',     (0, 0), (-1, 0), 0.01, colors.HexColor('#BBBBBB')),
             ('TOPPADDING',    (0, 0), (-1, 0), 7),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 7),
             # Data rows
@@ -801,12 +807,204 @@ class MicrobiomePDFGenerator:
             ('ALIGN',         (0, 0), (0, -1),  'LEFT'),
             ('ALIGN',         (1, 0), (-1, -1), 'CENTER'),
             # Subtle row separator
-            ('LINEBELOW',     (0, 1), (-1, -1), 0.01, TABLE_SEP),
+            # ('LINEBELOW',     (0, 1), (-1, -1), 0.01, TABLE_SEP),
         ])
         for cmd in bg_cmds:
             style.add(*cmd)
         tbl.setStyle(style)
         return tbl, notes
+
+    # ── Summary page builder ───────────────────────────────────────────────────
+
+    def _build_summary_section(self) -> list:
+        """
+        Return story elements for the Summary page.
+
+        Layout: for each Category → one title paragraph (SecTitle-like style),
+        then for each Subsection → a SubTitle paragraph + a clean data table
+        containing only the rows flagged with '!'.
+
+        No coloured header rows inside the tables — pure typography.
+        """
+        from collections import OrderedDict
+
+        # ── 1. Collect alarmed rows, preserving section/subsection structure ──
+        entries: list = []          # (category, sub_title_or_None, [row, ...])
+        sections = list(self.df['TipoInforme'].unique())
+
+        for section in sections:
+            sec_df = self.df[self.df['TipoInforme'] == section]
+            subsections = SUBSECTION_MAP.get(section, [])
+
+            if subsections:
+                trigger_to_idx: dict = {}
+                for sub_idx, (title, sdesc, triggers) in enumerate(subsections):
+                    if isinstance(triggers, str):
+                        triggers = [triggers]
+                    for t in triggers:
+                        trigger_to_idx[t] = sub_idx
+
+                sub_meta = {i: title for i, (title, _, _) in enumerate(subsections)}
+
+                pre_rows: list = []
+                row_assignments: list = []
+                current_idx: int | None = None
+
+                for _, row in sec_df.iterrows():
+                    cleaned = self._clean_param(row.get('Ensayo', ''))
+                    if cleaned in trigger_to_idx:
+                        current_idx = trigger_to_idx[cleaned]
+                    if current_idx is None:
+                        pre_rows.append(row.name)
+                    else:
+                        row_assignments.append((current_idx, row.name))
+
+                merged: OrderedDict = OrderedDict()
+                for sub_idx, ridx in row_assignments:
+                    merged.setdefault(sub_idx, []).append(ridx)
+                if pre_rows and merged:
+                    first_key = next(iter(merged))
+                    merged[first_key] = pre_rows + merged[first_key]
+
+                for sub_idx, indices in sorted(merged.items()):
+                    sub_title = sub_meta.get(sub_idx, '')
+                    sub_df    = sec_df.loc[indices]
+                    alarmed   = [r for _, r in sub_df.iterrows() if self._alarm(r)[0] == '!']
+                    if alarmed:
+                        entries.append((section, sub_title, alarmed))
+            else:
+                alarmed = [r for _, r in sec_df.iterrows() if self._alarm(r)[0] == '!']
+                if alarmed:
+                    entries.append((section, None, alarmed))
+
+        # ── 2. Nothing alarmed ────────────────────────────────────────────────
+        if not entries:
+            return [Paragraph(
+                "No parameters outside reference ranges were detected in this report.",
+                self.styles['SecDesc'],
+            )]
+
+        # ── 3. Shared layout constants ────────────────────────────────────────
+        avail = self.PAGE_W - self.L_MARGIN - self.R_MARGIN
+        col_w = [avail * 0.40, avail * 0.12, avail * 0.12, avail * 0.22, avail * 0.08]
+
+        fb  = self._f('VistaSans-Book')
+        fl  = self._f('VistaSans-Light')
+        fr  = self._f('VistaSans')
+        cal = self._f('Calibri')
+
+        # Category title style — slightly smaller than SecTitle, same cyan colour
+        cat_title_ps = ParagraphStyle(
+            '_sum_cat', fontName=fb, fontSize=13,
+            textColor=CYAN, spaceBefore=14, spaceAfter=3, leading=16)
+
+        # Subsection label style — same as SubTitle
+        sub_label_ps = ParagraphStyle(
+            '_sum_sub', fontName=fb, fontSize=9,
+            textColor=DARK_GRAY, spaceBefore=8, spaceAfter=3, leading=12,
+            leftIndent=2)
+
+        base_tbl_style = [
+            ('BACKGROUND',    (0, 0), (-1, 0), WHITE),
+            ('LINEBELOW',     (0, 0), (-1, 0), 0.3, colors.HexColor('#BBBBBB')),
+            ('TOPPADDING',    (0, 0), (-1, 0), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('TOPPADDING',    (0, 1), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+            ('LEFTPADDING',   (0, 0), (-1, -1), 7),
+            ('RIGHTPADDING',  (0, 0), (-1, -1), 7),
+            ('VALIGN',        (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN',         (0, 0), (0, -1),  'LEFT'),
+            ('ALIGN',         (1, 0), (-1, -1), 'CENTER'),
+            # ('LINEBELOW',     (0, 1), (-1, -1), 0, TABLE_SEP),
+        ]
+
+        hdr_l = ParagraphStyle('_shl2', fontName=fb, fontSize=8.5, leading=11, textColor=DARK_GRAY)
+        hdr_c = ParagraphStyle('_shc2', fontName=fb, fontSize=8.5, leading=11,
+                               textColor=DARK_GRAY, alignment=TA_CENTER)
+
+        # ── 4. Build story: one title + one table per (category, subsection) ─
+        story: list = []
+        current_cat: str | None = None
+        tbl_counter = 0   # unique suffix for ParagraphStyle names
+
+        for category, sub_title, alarmed_rows in entries:
+
+            # Category title (only once per category)
+            if category != current_cat:
+                current_cat = category
+                story.append(Paragraph(category, cat_title_ps))
+
+            # Subsection label (if any)
+            if sub_title:
+                story.append(Paragraph(sub_title, sub_label_ps))
+
+            # ── Build mini-table for this subsection's alarmed rows ───────────
+            tdata: list = [[
+                Paragraph('Parameter',       hdr_l),
+                Paragraph('Result',          hdr_c),
+                Paragraph('Unit',            hdr_c),
+                Paragraph('Reference Range', hdr_c),
+                Paragraph('',               hdr_c),
+            ]]
+            bg_cmds: list = []
+
+            for i, row in enumerate(alarmed_rows):
+                ridx  = i + 1
+                param = self._clean_param(row.get('Ensayo', ''))
+                is_child = param.startswith('- ')
+                result   = self._result(row)
+                unit     = self._clean(row.get('Unidad1', ''))
+                ref      = self._ref_range(row)
+                sym, tc, _ = self._alarm(row)
+
+                param_key   = param.lstrip('- ').strip()
+                cited_mark  = ' \u2709' if param_key in self.cited_params else ''
+                sym_display = (sym + cited_mark) if sym else cited_mark
+
+                indent = 28 if is_child else 7
+                param_ps = ParagraphStyle(
+                    f'_spp{tbl_counter}_{i}',
+                    fontName=fb if not is_child else fr,
+                    fontSize=8.5, leading=11,
+                    textColor=DARK_GRAY if is_child else BLACK,
+                    leftIndent=indent)
+
+                vfs    = 6.5 if len(result) > 12 or '\n' in result else 8.5
+                val_ps = ParagraphStyle(
+                    f'_svp{tbl_counter}_{i}', fontName=cal,
+                    fontSize=vfs, leading=vfs + 2, textColor=BLACK, alignment=TA_CENTER)
+                ctr_ps = ParagraphStyle(
+                    f'_scp{tbl_counter}_{i}', fontName=fl, fontSize=8.5,
+                    leading=11, textColor=DARK_GRAY, alignment=TA_CENTER)
+                ref_ps = ParagraphStyle(
+                    f'_srp{tbl_counter}_{i}', fontName=cal, fontSize=8.5,
+                    leading=11, textColor=DARK_GRAY, alignment=TA_CENTER)
+                sym_ps = ParagraphStyle(
+                    f'_ssp{tbl_counter}_{i}', fontName=cal, fontSize=9,
+                    leading=11, textColor=tc if tc else DARK_GRAY, alignment=TA_CENTER)
+
+                tdata.append([
+                    Paragraph(param,       param_ps),
+                    Paragraph(result,      val_ps),
+                    Paragraph(unit,        ctr_ps),
+                    Paragraph(ref,         ref_ps),
+                    Paragraph(sym_display, sym_ps),
+                ])
+                if not is_child:
+                    bg_cmds.append(('BACKGROUND', (0, ridx), (-1, ridx), LIGHT_GRAY))
+
+            style_cmds = list(base_tbl_style)
+            for cmd in bg_cmds:
+                style_cmds.append(cmd)
+
+            tbl = Table(tdata, colWidths=col_w, repeatRows=1)
+            tbl.setStyle(TableStyle(style_cmds))
+            story.append(tbl)
+            story.append(Spacer(1, 4))
+            tbl_counter += 1
+
+        return story
 
     # ── Public API ─────────────────────────────────────────────────────────────
 
@@ -916,7 +1114,6 @@ class MicrobiomePDFGenerator:
                     for sidx, indices in sorted(merged.items())
                 ]
 
-                all_notes: list = []
                 for sub_title, sub_desc, row_idx in buckets:
                     sub_df = sec_df.loc[row_idx]
                     if sub_df.empty:
@@ -929,13 +1126,12 @@ class MicrobiomePDFGenerator:
 
                     tbl, notes = self._build_section_table(sub_df)
                     story.append(tbl)
-                    all_notes.extend(notes)
+                    # Display notes immediately after their own subsection table
+                    if notes:
+                        story.append(Spacer(1, 4))
+                        for note in notes:
+                            story.append(Paragraph(note, self.styles['NoteItem']))
                     story.append(Spacer(1, 6))
-
-                if all_notes:
-                    story.append(Spacer(1, 4))
-                    for note in all_notes:
-                        story.append(Paragraph(note, self.styles['NoteItem']))
 
             else:
                 # No subsections — render as a single table (original behaviour)
@@ -951,6 +1147,20 @@ class MicrobiomePDFGenerator:
             # Page break between sections (not after the last one)
             if idx < len(sections) - 1:
                 story.append(PageBreak())
+
+        # ── Summary page (last page) ───────────────────────────────────────────
+        story.append(PageBreak())
+        story.append(SectionMarker('Summary'))
+        story.append(Paragraph('Summary', self.styles['SecTitle']))
+        story.append(Spacer(1, 2))
+        story.append(Paragraph(
+            'The following parameters were found outside their reference ranges. '
+            'They are grouped by analysis category and section for a quick clinical overview.',
+            self.styles['SecDesc'],
+        ))
+        story.append(Spacer(1, 8))
+        for el in self._build_summary_section():
+            story.append(el)
 
         doc.build(story)
         return buf.getvalue()

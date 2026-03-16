@@ -141,15 +141,26 @@
                     </div>
 
                     <!-- ── Two-pane viewer ── -->
-                    <div class="result-panes">
+                    <div class="result-panes" id="resultPanes">
 
                         <!-- Left — PDF preview -->
-                        <div class="result-pane-preview">
-                            <div class="result-pane-preview-label">Report preview</div>
+                        <div class="result-pane-preview" id="panePreview">
+                            <div class="result-pane-preview-label">
+                                <span>Report preview</span>
+                                <div class="zoom-controls">
+                                    <button class="zoom-btn" onclick="changeZoom(-0.15)" title="Zoom out">−</button>
+                                    <span class="zoom-level" id="zoomLabel">100%</span>
+                                    <button class="zoom-btn" onclick="changeZoom(+0.15)" title="Zoom in">+</button>
+                                    <button class="zoom-btn zoom-reset" onclick="resetZoom()" title="Fit to width">⊡</button>
+                                </div>
+                            </div>
                             <div class="result-pane-preview-scroll" id="pdfCanvasContainer">
                                 <!-- PDF pages rendered as <canvas> elements by PDF.js -->
                             </div>
                         </div>
+
+                        <!-- Drag handle -->
+                        <div class="pane-resizer" id="paneResizer" title="Drag to resize"></div>
 
                         <!-- Right — Doctor Comments -->
                         <div class="result-pane-comments" id="doctorCommentsPanel">
@@ -382,45 +393,77 @@
         }
 
         // ── PDF.js preview renderer ───────────────────────────────────────
+        let currentPdfDoc  = null;   // cached PDF document
+        let zoomLevel      = 1.0;    // 1.0 = fit-to-width
+
         async function renderPDFPreview(arrayBuffer) {
             const container = document.getElementById('pdfCanvasContainer');
             container.innerHTML =
                 '<p style="padding:1.5rem;color:#888;text-align:center;font-size:0.85rem;">Rendering preview…</p>';
 
-            // Point PDF.js at its worker (same CDN version)
             pdfjsLib.GlobalWorkerOptions.workerSrc =
                 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
             try {
-                // Copy the buffer so PDF.js can own it without detaching ours
                 const copy = arrayBuffer.slice(0);
-                const pdf  = await pdfjsLib.getDocument({ data: copy }).promise;
-                container.innerHTML = ''; // clear "Rendering…" message
-
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    const page     = await pdf.getPage(pageNum);
-                    const baseVP   = page.getViewport({ scale: 1.0 });
-                    // Scale to fit the container width (minus 12px padding on each side)
-                    const cw       = (container.clientWidth || 760) - 24;
-                    const scale    = cw / baseVP.width;
-                    const viewport = page.getViewport({ scale });
-
-                    const canvas   = document.createElement('canvas');
-                    const ctx      = canvas.getContext('2d');
-                    canvas.width   = viewport.width;
-                    canvas.height  = viewport.height;
-                    canvas.style.cssText =
-                        'width:100%;display:block;margin-bottom:4px;box-shadow:0 1px 4px rgba(0,0,0,.18);';
-
-                    await page.render({ canvasContext: ctx, viewport }).promise;
-                    container.appendChild(canvas);
-                }
+                currentPdfDoc = await pdfjsLib.getDocument({ data: copy }).promise;
+                zoomLevel = 1.0;
+                updateZoomLabel();
+                await renderAllPages(container);
             } catch (err) {
                 container.innerHTML =
                     `<p style="padding:1rem;color:#c00;font-size:0.85rem;text-align:center;">
                         Preview error: ${err.message}
                      </p>`;
             }
+        }
+
+        async function renderAllPages(container) {
+            if (!currentPdfDoc) return;
+            container.innerHTML = '';
+            const cw = (container.clientWidth || 760) - 24; // fit-to-width base
+
+            for (let pageNum = 1; pageNum <= currentPdfDoc.numPages; pageNum++) {
+                const page   = await currentPdfDoc.getPage(pageNum);
+                const baseVP = page.getViewport({ scale: 1.0 });
+                const scale  = (cw / baseVP.width) * zoomLevel;
+                const vp     = page.getViewport({ scale });
+
+                const canvas = document.createElement('canvas');
+                const ctx    = canvas.getContext('2d');
+                canvas.width  = vp.width;
+                canvas.height = vp.height;
+
+                // When zoomed > fit-width, let canvas scroll horizontally
+                const pct = zoomLevel * 100;
+                canvas.style.cssText =
+                    `display:block;margin:0 auto 4px;box-shadow:0 1px 4px rgba(0,0,0,.18);` +
+                    `width:${pct}%;max-width:none;`;
+
+                await page.render({ canvasContext: ctx, viewport: vp }).promise;
+                container.appendChild(canvas);
+            }
+        }
+
+        function updateZoomLabel() {
+            const el = document.getElementById('zoomLabel');
+            if (el) el.textContent = Math.round(zoomLevel * 100) + '%';
+        }
+
+        async function changeZoom(delta) {
+            if (!currentPdfDoc) return;
+            zoomLevel = Math.min(4.0, Math.max(0.25, zoomLevel + delta));
+            updateZoomLabel();
+            const container = document.getElementById('pdfCanvasContainer');
+            await renderAllPages(container);
+        }
+
+        async function resetZoom() {
+            if (!currentPdfDoc) return;
+            zoomLevel = 1.0;
+            updateZoomLabel();
+            const container = document.getElementById('pdfCanvasContainer');
+            await renderAllPages(container);
         }
 
         // ── UI helpers ────────────────────────────────────────────────────
@@ -678,6 +721,47 @@
         document.addEventListener('DOMContentLoaded', setupMentionDD);
         // Also wire immediately (script runs at end of body, DOM already available)
         setupMentionDD();
+
+        // ── Pane resizer ───────────────────────────────────────────────────────
+        (function () {
+            const resizer  = document.getElementById('paneResizer');
+            const preview  = document.getElementById('panePreview');
+            const panes    = document.getElementById('resultPanes');
+            if (!resizer || !preview || !panes) return;
+
+            let dragging = false;
+            let startX   = 0;
+            let startW   = 0;
+
+            resizer.addEventListener('mousedown', (e) => {
+                dragging = true;
+                startX   = e.clientX;
+                startW   = preview.getBoundingClientRect().width;
+                resizer.classList.add('dragging');
+                document.body.style.cursor    = 'col-resize';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!dragging) return;
+                const totalW   = panes.getBoundingClientRect().width;
+                const resizerW = resizer.offsetWidth;
+                const delta    = e.clientX - startX;
+                const minW     = 200;
+                const maxW     = totalW - resizerW - 200;
+                const newW     = Math.min(maxW, Math.max(minW, startW + delta));
+                preview.style.width = newW + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (!dragging) return;
+                dragging = false;
+                resizer.classList.remove('dragging');
+                document.body.style.cursor     = '';
+                document.body.style.userSelect = '';
+            });
+        })();
     </script>
 </body>
 </html>
