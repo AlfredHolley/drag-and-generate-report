@@ -74,6 +74,197 @@ ALARM_MAP: dict = {
     'R':         ('!',   DARK_GRAY, None),
 }
 
+# ── Subsection map ─────────────────────────────────────────────────────────────
+# Structure:  TipoInforme → [ (subsection_title, description, trigger_param), … ]
+# trigger_param: the CLEANED Ensayo value (no [CODE] suffix) that starts the subsection.
+# i18n note: all text lives here — swap this dict for translated versions in future.
+
+SUBSECTION_MAP: dict = {
+
+    "Intestinal Dysbiosis by NGS": [
+        (
+            "Gut Health Markers",
+            "These parameters assess fundamental aspects of gut physiology: stool pH, "
+            "digestive enzyme activity, gut permeability (Zonulin, Alpha-1 antitrypsin), "
+            "occult blood, calprotectin (inflammation) and immune secretory IgA. Together "
+            "they provide an overview of barrier integrity and local immune defence.",
+            "pH",
+        ),
+        (
+            "Microbial Ecosystem Overview",
+            "Key functional groups of the intestinal microbiome are summarised here. "
+            "Muconutritive bacteria protect the mucous layer; Regulatory bacteria modulate "
+            "immune tolerance; Proteolytic bacteria are involved in protein fermentation. "
+            "An imbalance in these groups is a hallmark of dysbiosis.",
+            "Bacteria",
+        ),
+        (
+            "Short-Chain Fatty Acids (SCFAs)",
+            "SCFAs — mainly acetate, propionate and butyrate — are produced by bacterial "
+            "fermentation of dietary fibres. Butyrate is the primary energy source for "
+            "colonocytes and has anti-inflammatory properties. An excess of putrefactive "
+            "SCFAs (valeric, iso-butyric, iso-valeric) indicates protein over-fermentation.",
+            "TOTAL SCFA",
+        ),
+        (
+            "Microbial Composition by Phylum & Genus",
+            "This section details the relative abundance of bacterial phyla (Bacillota, "
+            "Bacteroidota) and key genera. The Bacillota/Bacteroidota ratio is a frequently "
+            "used indicator of metabolic balance. Deviations at genus level can pinpoint "
+            "specific ecological imbalances.",
+            "Bacillota+Bacteridota",
+        ),
+        (
+            "Fungi & Yeasts",
+            "Fungal communities (mycobiome) represent a small but clinically significant "
+            "fraction of the gut microbiome. Candida overgrowth, for instance, may indicate "
+            "dysbiosis or impaired immune surveillance. Mycotoxins produced by certain moulds "
+            "can also affect gut health.",
+            "Fungi and Yeasts",
+        ),
+        (
+            "Viruses",
+            "The intestinal virome is composed predominantly of bacteriophages — viruses that "
+            "infect bacteria — and can significantly shape the bacterial community. Pathogenic "
+            "viruses are also monitored here.",
+            "Viruses",
+        ),
+        (
+            "Parasites & Helminths",
+            "This panel screens for protozoa and helminths (worms) that may colonise the "
+            "gastrointestinal tract. Even asymptomatic infections can alter gut microbiome "
+            "composition and trigger chronic low-grade inflammation.",
+            "Parasites and Helminths",
+        ),
+    ],
+
+    "Bacterioma by NGS": [
+        (
+            "Diversity Indices",
+            "The Shannon index measures both the richness (number of species) and evenness "
+            "(relative abundance distribution) of the bacterial community. Higher diversity "
+            "is generally associated with a resilient, healthy microbiome.",
+            "Bacterium",
+        ),
+        (
+            "Functional Groups",
+            "Bacteria are grouped by their primary ecological role: muconutritive (mucus-layer "
+            "maintenance), regulatory (immune modulation) and proteolytic (protein degradation). "
+            "This functional lens complements taxonomic identification.",
+            "Muconutritive",
+        ),
+        (
+            "Phyla Composition",
+            "The major bacterial phyla found in the human gut are quantified here. "
+            "Bacillota (Firmicutes) and Bacteroidota (Bacteroidetes) typically account for "
+            ">90 % of the microbiome; shifts in their ratio or the emergence of other phyla "
+            "can signal dysbiosis.",
+            "Bacillota (Firmicutes)",
+        ),
+        (
+            "Genus-Level Analysis",
+            "A detailed census of bacterial genera detected in the sample. Genera are listed "
+            "alphabetically; species-level detail is shown for clinically relevant genera. "
+            "This granular view helps identify specific ecological niches affected.",
+            "Aerococcus",
+        ),
+    ],
+
+    "Archaeoma by NGS": [
+        (
+            "Diversity & Overview",
+            "Archaea, though less abundant than bacteria, play important metabolic roles — "
+            "particularly methanogens such as Methanobrevibacter smithii, which consume "
+            "hydrogen produced during fermentation and influence gas production (bloating, IMO).",
+            "Archaea",
+        ),
+        (
+            "Archaeal Groups",
+            "Archaeal populations are classified by metabolic function: methanogens, "
+            "sulphurous, halophilic, thermophilic and nitrophilic groups. Their relative "
+            "abundance reflects specific metabolic activities in the gut.",
+            "Cuniculiplasma",
+        ),
+        (
+            "Genus-Level Analysis",
+            "Individual archaeal genera detected in the sample. Methanobrevibacter and "
+            "Methanosphaera are the most common gut methanogens; others are rare and may "
+            "reflect environmental contamination or transient colonisation.",
+            "Ferroglobus",
+        ),
+    ],
+
+    "Mycobiome by NGS": [
+        (
+            "Diversity & Overview",
+            "Fungal diversity is assessed using the Shannon index. A balanced mycobiome with "
+            "moderate diversity is generally favourable; low diversity or dominance by a "
+            "single genus (e.g. Candida) may indicate dysbiosis or immune compromise.",
+            "Fungi",
+        ),
+        (
+            "Genus-Level Analysis",
+            "Individual fungal genera and species detected by NGS. The distinction between "
+            "pathogenic species (e.g. Candida albicans, Aspergillus) and commensal yeasts "
+            "(e.g. Saccharomyces cerevisiae) is clinically important.",
+            "Alternaria",
+        ),
+    ],
+
+    "Virome by NGS": [
+        (
+            "Diversity & Overview",
+            "The Shannon index reflects the diversity of the viral community. A stable, "
+            "diverse virome — dominated by bacteriophages — is associated with microbiome "
+            "resilience.",
+            "Virus",
+        ),
+        (
+            "Bacteriophages",
+            "Phages are viruses that specifically infect bacteria and are the most abundant "
+            "viral entities in the gut. They can lyse bacterial cells or integrate into their "
+            "genomes, thereby modulating microbiome composition.",
+            "TOTAL Phages",
+        ),
+        (
+            "Eukaryotic Viruses & Pathogens",
+            "Viruses capable of infecting human cells — including DNA viruses, retroviruses "
+            "and other pathogens — are screened here. Their presence may be clinically "
+            "significant and warrants further investigation.",
+            "TOTAL Pathogens",
+        ),
+    ],
+
+    "Parasitome by NGS": [
+        (
+            "Protozoa",
+            "Protozoan parasites are single-celled organisms that can colonise the gut and "
+            "cause symptoms ranging from mild discomfort to severe diarrhoea. Giardia and "
+            "Blastocystis are among the most commonly detected species.",
+            "Blastocystis sp.",
+        ),
+        (
+            "Helminths",
+            "Helminths are multicellular parasitic worms. Though less common in industrialised "
+            "settings, infections with Enterobius (pinworm), Ascaris or other species may "
+            "persist asymptomatically and alter immune regulation.",
+            "Enterobius",
+        ),
+    ],
+
+    "Stool Sample": [
+        (
+            "Inflammatory & Immune Markers",
+            "These biomarkers reflect the inflammatory state of the intestinal mucosa and the "
+            "local immune response. Elevated calprotectin or eosinophil protein X (EPX) may "
+            "indicate active inflammation; secretory IgA is the main antibody protecting the "
+            "gut lining.",
+            "EPX",
+        ),
+    ],
+}
+
+
 # Section descriptions – keyed by TipoInforme value.
 # Add / modify descriptions here without touching any other code.
 SECTION_DESCRIPTIONS: dict = {
@@ -224,12 +415,16 @@ class MicrobiomePDFGenerator:
         fb = self._f('VistaSans-Book')
         fl = self._f('VistaSans-Light')
         entries = [
-            ('SecTitle', dict(fontName=fb, fontSize=20, textColor=CYAN,
-                              spaceAfter=6, spaceBefore=0, leading=24)),
-            ('SecDesc',  dict(fontName=fl, fontSize=9,  textColor=DARK_GRAY,
-                              spaceAfter=8, leading=13, alignment=TA_JUSTIFY)),
-            ('NoteItem', dict(fontName=fl, fontSize=8,  textColor=MID_GRAY,
-                              spaceAfter=3, leading=11, leftIndent=10)),
+            ('SecTitle',  dict(fontName=fb, fontSize=20, textColor=CYAN,
+                               spaceAfter=6, spaceBefore=0, leading=24)),
+            ('SecDesc',   dict(fontName=fl, fontSize=9,  textColor=DARK_GRAY,
+                               spaceAfter=8, leading=13, alignment=TA_JUSTIFY)),
+            ('SubTitle',  dict(fontName=fb, fontSize=10, textColor=DARK_GRAY,
+                               spaceAfter=3, spaceBefore=14, leading=13)),
+            ('SubDesc',   dict(fontName=fl, fontSize=8.5, textColor=MID_GRAY,
+                               spaceAfter=6, leading=12, alignment=TA_JUSTIFY)),
+            ('NoteItem',  dict(fontName=fl, fontSize=8,  textColor=MID_GRAY,
+                               spaceAfter=3, leading=11, leftIndent=10)),
         ]
         for name, kw in entries:
             if name not in self.styles:
@@ -482,9 +677,11 @@ class MicrobiomePDFGenerator:
                 textColor=param_color, leftIndent=indent)
 
             # ── Result cell ───────────────────────────────────────────────────
+            # Use a smaller font for long / multi-word results (e.g. "ABSENCE: DNA not detected")
+            val_font_size = 6.5 if len(result) > 12 or '\n' in result else 8.5
             val_ps = ParagraphStyle(
-                f'_vp{i}', fontName=self._f('Calibri'), fontSize=8.5,
-                leading=11, textColor=BLACK, alignment=TA_CENTER)
+                f'_vp{i}', fontName=self._f('Calibri'), fontSize=val_font_size,
+                leading=val_font_size + 2, textColor=BLACK, alignment=TA_CENTER)
 
             # ── Unit / ref range cells ────────────────────────────────────────
             ctr_ps = ParagraphStyle(
@@ -531,7 +728,7 @@ class MicrobiomePDFGenerator:
             ('ALIGN',         (0, 0), (0, -1),  'LEFT'),
             ('ALIGN',         (1, 0), (-1, -1), 'CENTER'),
             # Subtle row separator
-            ('LINEBELOW',     (0, 1), (-1, -1), 0.05, TABLE_SEP),
+            ('LINEBELOW',     (0, 1), (-1, -1), 0.01, TABLE_SEP),
         ])
         for cmd in bg_cmds:
             style.add(*cmd)
@@ -592,15 +789,67 @@ class MicrobiomePDFGenerator:
                 story.append(Paragraph(desc, self.styles['SecDesc']))
                 story.append(Spacer(1, 6))
 
-            # Hierarchical results table
-            tbl, notes = self._build_section_table(sec_df)
-            story.append(tbl)
+            # ── Split into subsections (if any defined) ────────────────────
+            subsections = SUBSECTION_MAP.get(section, [])
 
-            # Memo notes below the table
-            if notes:
-                story.append(Spacer(1, 8))
-                for note in notes:
-                    story.append(Paragraph(note, self.styles['NoteItem']))
+            if subsections:
+                # Build trigger map: cleaned_param → (title, description)
+                trigger_map = {
+                    trig: (title, sdesc)
+                    for title, sdesc, trig in subsections
+                }
+                trigger_order = [trig for _, _, trig in subsections]
+
+                # Assign each row to a subsection bucket
+                current_sub = None
+                buckets: list = []          # [(sub_title, sub_desc, [row_indices])]
+                bucket_indices: list = []
+
+                for _, row in sec_df.iterrows():
+                    cleaned = self._clean_param(row.get('Ensayo', ''))
+                    if cleaned in trigger_map:
+                        if current_sub is not None:
+                            buckets.append((*current_sub, bucket_indices))
+                        current_sub   = trigger_map[cleaned]
+                        bucket_indices = [row.name]
+                    else:
+                        bucket_indices.append(row.name)
+
+                if current_sub is not None:
+                    buckets.append((*current_sub, bucket_indices))
+
+                # Rows that came before the first trigger (no subsection)
+                # are handled as a nameless bucket (title/desc = None)
+
+                all_notes: list = []
+                for sub_title, sub_desc, row_idx in buckets:
+                    sub_df = sec_df.loc[row_idx]
+                    if sub_df.empty:
+                        continue
+
+                    # Subsection header + description
+                    story.append(Paragraph(sub_title, self.styles['SubTitle']))
+                    if sub_desc:
+                        story.append(Paragraph(sub_desc, self.styles['SubDesc']))
+
+                    tbl, notes = self._build_section_table(sub_df)
+                    story.append(tbl)
+                    all_notes.extend(notes)
+                    story.append(Spacer(1, 6))
+
+                if all_notes:
+                    story.append(Spacer(1, 4))
+                    for note in all_notes:
+                        story.append(Paragraph(note, self.styles['NoteItem']))
+
+            else:
+                # No subsections — render as a single table (original behaviour)
+                tbl, notes = self._build_section_table(sec_df)
+                story.append(tbl)
+                if notes:
+                    story.append(Spacer(1, 8))
+                    for note in notes:
+                        story.append(Paragraph(note, self.styles['NoteItem']))
 
             story.append(Spacer(1, 12))
 
