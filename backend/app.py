@@ -17,6 +17,10 @@ from pdf_generator.microbiome_pdf import generate_microbiome_pdf, MicrobiomePDFG
 
 # Le dossier frontend est un niveau au-dessus du backend
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), '..', 'frontend')
+# Fonts shared between the PDF generator and the web UI
+_BASE = os.path.dirname(os.path.abspath(__file__))
+FONTS_DIR = os.path.join(_BASE, '..', 'fonts') if os.path.isdir(
+    os.path.join(_BASE, '..', 'fonts')) else '/app/fonts'
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 CORS(app)
@@ -35,6 +39,12 @@ def allowed_file(filename: str) -> bool:
 
 
 # ── Routes ───────────────────────────────────────────────────────────────────
+
+@app.route('/fonts/<path:filename>')
+def serve_font(filename):
+    """Serve font files from the shared fonts/ directory."""
+    return send_from_directory(FONTS_DIR, filename)
+
 
 @app.route('/')
 def index():

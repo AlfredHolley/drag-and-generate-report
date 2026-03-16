@@ -1,5 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
+@font-face {
+    font-family: 'VistaSans';
+    src: url('/fonts/VistaSansOT-Light.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
     --black: #000000;
     --cyan: rgb(22, 186, 222);
@@ -46,9 +54,10 @@ body {
 }
 
 .title {
+    font-family: 'VistaSans', 'Inter', sans-serif;
     font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-weight: 300;
+    letter-spacing: 0.12em;
     margin: 0;
     text-transform: uppercase;
     line-height: 1;
