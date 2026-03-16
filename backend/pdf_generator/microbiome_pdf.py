@@ -77,6 +77,9 @@ ALARM_MAP: dict = {
 # ── Subsection map ─────────────────────────────────────────────────────────────
 # Structure:  TipoInforme → [ (subsection_title, description, trigger_param), … ]
 # trigger_param: the CLEANED Ensayo value (no [CODE] suffix) that starts the subsection.
+#   It may also be a LIST of such values — all items trigger the same subsection.
+#   Rows sharing the same subsection are MERGED into a single block even when
+#   they are fragmented / non-contiguous in the raw data.
 # i18n note: all text lives here — swap this dict for translated versions in future.
 
 SUBSECTION_MAP: dict = {
@@ -97,14 +100,6 @@ SUBSECTION_MAP: dict = {
             "immune tolerance; Proteolytic bacteria are involved in protein fermentation. "
             "An imbalance in these groups is a hallmark of dysbiosis.",
             "Bacteria",
-        ),
-        (
-            "Short-Chain Fatty Acids (SCFAs)",
-            "SCFAs — mainly acetate, propionate and butyrate — are produced by bacterial "
-            "fermentation of dietary fibres. Butyrate is the primary energy source for "
-            "colonocytes and has anti-inflammatory properties. An excess of putrefactive "
-            "SCFAs (valeric, iso-butyric, iso-valeric) indicates protein over-fermentation.",
-            "TOTAL SCFA",
         ),
         (
             "Microbial Composition by Phylum & Genus",
@@ -128,6 +123,16 @@ SUBSECTION_MAP: dict = {
             "infect bacteria — and can significantly shape the bacterial community. Pathogenic "
             "viruses are also monitored here.",
             "Viruses",
+        ),
+        (
+            "Short-Chain Fatty Acids (SCFAs)",
+            "SCFAs — mainly acetate, propionate and butyrate — are produced by bacterial "
+            "fermentation of dietary fibres. Butyrate is the primary energy source for "
+            "colonocytes and has anti-inflammatory properties. An excess of putrefactive "
+            "SCFAs (valeric, iso-butyric, iso-valeric) indicates protein over-fermentation.",
+            # Multiple triggers: covers both the summary row and the putrefactive sub-group
+            # that may appear separately in the raw data after other triggers.
+            ["TOTAL SCFA", "SCFA Putrefactive"],
         ),
         (
             "Parasites & Helminths",
@@ -341,7 +346,7 @@ class MicrobiomePDFGenerator:
     L_MARGIN = 45
     R_MARGIN = 45
     T_MARGIN = 72   # room for running header
-    B_MARGIN = 52   # room for footer
+    B_MARGIN = 90   # generous bottom margin — keeps space for footer + optional doctor-comment box
 
     def __init__(self, df: pd.DataFrame,
                  comments: dict | None = None,
@@ -861,33 +866,55 @@ class MicrobiomePDFGenerator:
             subsections = SUBSECTION_MAP.get(section, [])
 
             if subsections:
-                # Build trigger map: cleaned_param → (title, description)
-                trigger_map = {
-                    trig: (title, sdesc)
-                    for title, sdesc, trig in subsections
-                }
-                trigger_order = [trig for _, _, trig in subsections]
+                # Build trigger → subsection-index map.
+                # Each entry's trigger field may be a str OR a list[str].
+                # All triggers that map to the same sub_idx share one merged bucket.
+                trigger_to_idx: dict = {}   # cleaned_param → sub_idx
+                for sub_idx, (title, sdesc, triggers) in enumerate(subsections):
+                    if isinstance(triggers, str):
+                        triggers = [triggers]
+                    for t in triggers:
+                        trigger_to_idx[t] = sub_idx
 
-                # Assign each row to a subsection bucket
-                current_sub = None
-                buckets: list = []          # [(sub_title, sub_desc, [row_indices])]
-                bucket_indices: list = []
+                # Sub-index metadata (title, desc) keyed by sub_idx
+                sub_meta = {
+                    i: (title, sdesc)
+                    for i, (title, sdesc, _) in enumerate(subsections)
+                }
+
+                # Assign every row to a subsection index.
+                # Rows before the first trigger are kept in a "pre" list and
+                # attached to the first subsection that appears.
+                pre_rows: list = []
+                row_assignments: list = []   # [(sub_idx, row.name), ...]
+                current_idx: int | None = None
 
                 for _, row in sec_df.iterrows():
                     cleaned = self._clean_param(row.get('Ensayo', ''))
-                    if cleaned in trigger_map:
-                        if current_sub is not None:
-                            buckets.append((*current_sub, bucket_indices))
-                        current_sub   = trigger_map[cleaned]
-                        bucket_indices = [row.name]
+                    if cleaned in trigger_to_idx:
+                        current_idx = trigger_to_idx[cleaned]
+                    if current_idx is None:
+                        pre_rows.append(row.name)
                     else:
-                        bucket_indices.append(row.name)
+                        row_assignments.append((current_idx, row.name))
 
-                if current_sub is not None:
-                    buckets.append((*current_sub, bucket_indices))
+                # Merge: collect all row indices for each sub_idx,
+                # preserving the relative data order within each subsection.
+                from collections import OrderedDict
+                merged: OrderedDict = OrderedDict()
+                for sub_idx, ridx in row_assignments:
+                    merged.setdefault(sub_idx, []).append(ridx)
 
-                # Rows that came before the first trigger (no subsection)
-                # are handled as a nameless bucket (title/desc = None)
+                # Prepend any pre-trigger rows to the first subsection bucket
+                if pre_rows and merged:
+                    first_key = next(iter(merged))
+                    merged[first_key] = pre_rows + merged[first_key]
+
+                # Sort by sub_idx so display follows the SUBSECTION_MAP order
+                buckets: list = [
+                    (*sub_meta[sidx], indices)
+                    for sidx, indices in sorted(merged.items())
+                ]
 
                 all_notes: list = []
                 for sub_title, sub_desc, row_idx in buckets:
