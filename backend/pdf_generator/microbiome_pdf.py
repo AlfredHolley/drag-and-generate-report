@@ -343,8 +343,10 @@ class MicrobiomePDFGenerator:
     T_MARGIN = 72   # room for running header
     B_MARGIN = 52   # room for footer
 
-    def __init__(self, df: pd.DataFrame):
+    def __init__(self, df: pd.DataFrame, comments: dict | None = None):
         self.df = df.copy()
+        # comments: {page_number (int) → comment_text (str)}
+        self.comments: dict = {int(k): str(v) for k, v in (comments or {}).items()}
 
         # Resolve asset paths — works both locally and inside Docker.
         # Local:  repo/backend/pdf_generator/  → ../../fonts  &  ../../frontend/logo_bw.svg
@@ -553,6 +555,41 @@ class MicrobiomePDFGenerator:
         canvas.setFillColor(MID_GRAY)
         canvas.drawString(self.L_MARGIN, 22, self.client)
         canvas.drawRightString(w - self.R_MARGIN, 22, str(doc.page))
+
+        # ── Doctor comment box (if any for this page) ─────────────────────
+        comment = self.comments.get(doc.page, '')
+        if comment:
+            box_pad = 4
+            box_h   = 46
+            box_y   = self.B_MARGIN - box_h - 2
+            box_x   = self.L_MARGIN
+            box_w   = w - self.L_MARGIN - self.R_MARGIN
+
+            # Filled background + thin border
+            canvas.setFillColor(colors.HexColor('#F9F9F7'))
+            canvas.setStrokeColor(DARK_GRAY)
+            canvas.setLineWidth(0.5)
+            canvas.rect(box_x, box_y, box_w, box_h, stroke=1, fill=1)
+
+            # Label
+            canvas.setFont(self._f('VistaSans-Book'), 6)
+            canvas.setFillColor(MID_GRAY)
+            canvas.drawString(box_x + box_pad, box_y + box_h - 9, "DOCTOR COMMENTS")
+
+            # Comment text — wrap into max 3 lines
+            canvas.setFont(self._f('Calibri'), 7.5)
+            canvas.setFillColor(DARK_GRAY)
+            max_chars = int(box_w / 4.0)
+            lines: list = []
+            for raw in comment.splitlines():
+                while len(raw) > max_chars:
+                    lines.append(raw[:max_chars])
+                    raw = raw[max_chars:]
+                lines.append(raw)
+            text_y = box_y + box_h - 20
+            for line in lines[:3]:
+                canvas.drawString(box_x + box_pad, text_y, line)
+                text_y -= 10
 
         canvas.restoreState()
 
@@ -863,6 +900,6 @@ class MicrobiomePDFGenerator:
 
 # ── Convenience wrapper ────────────────────────────────────────────────────────
 
-def generate_microbiome_pdf(df: pd.DataFrame) -> bytes:
+def generate_microbiome_pdf(df: pd.DataFrame, comments: dict | None = None) -> bytes:
     """Generate a microbiome PDF from *df* and return the raw PDF bytes."""
-    return MicrobiomePDFGenerator(df).generate()
+    return MicrobiomePDFGenerator(df, comments=comments).generate()

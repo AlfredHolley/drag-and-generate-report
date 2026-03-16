@@ -8,6 +8,7 @@ Endpoint principal : POST /api/convert
 
 import os
 import io
+import json
 import pandas as pd
 from flask import Flask, request, Response, jsonify, send_from_directory
 from flask_cors import CORS
@@ -188,8 +189,15 @@ def generate_pdf():
 
         df = xl_file.parse(sheet_name)
 
+        # Doctor comments: optional JSON string  {pageNumber: "comment text", …}
+        comments_raw = request.form.get('comments', '{}')
+        try:
+            comments = json.loads(comments_raw)
+        except Exception:
+            comments = {}
+
         # Génération du PDF
-        pdf_bytes = generate_microbiome_pdf(df)
+        pdf_bytes = generate_microbiome_pdf(df, comments=comments)
 
         # Nom de fichier de sortie
         base_name = secure_filename(file.filename).rsplit('.', 1)[0]
