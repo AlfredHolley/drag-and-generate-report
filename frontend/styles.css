@@ -57,9 +57,9 @@ body {
     font-family: 'VistaSans', 'Inter', sans-serif;
     font-size: 2rem;
     font-weight: 300;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
     margin: 0;
-    text-transform: uppercase;
+    /* text-transform: uppercase; */
     line-height: 1;
 }
 
@@ -159,11 +159,23 @@ body {
 /* Upload Section */
 .upload-section {
     width: 100%;
-    max-width: 800px; 
-    margin: 4.5rem auto;
-    margin-top: 7rem;
-    margin-bottom: 7rem;
-    padding: 0 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Centred wrapper for the drop zone + button */
+.upload-core {
+    width: 100%;
+    max-width: 480px;
+    padding: 4rem 2rem 3rem;
+}
+
+/* Button row below the drop zone */
+.upload-btn-row {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
 }
 
 .timepoint-selector {
@@ -315,7 +327,8 @@ body {
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    min-height: 200px;
+    aspect-ratio: 1.618 / 1;
+    min-height: unset;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -514,40 +527,62 @@ body {
     letter-spacing: 0.02em;
 }
 
-/* Steps Section — lives inside the upload section, shown only before generation */
+/* Steps Section — full viewport width background */
 .steps-section {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    gap: 3rem;
-    margin-top: 3rem;
-    padding: 2.5rem 2rem;
-    flex-wrap: nowrap;
-    background: #ecebe5;
-    border-radius: 6px;
     width: 100%;
-    box-sizing: border-box;
+    background: #ecebe5;
+    padding: 3.5rem 2rem;
+}
+
+/* Inner content wrapper — centred, max-width */
+.steps-inner {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+/* Thin vertical divider between steps */
+.step-divider {
+    width: 1px;
+    background: rgba(0,0,0,0.12);
+    align-self: stretch;
+    margin: 0 3rem;
+    flex-shrink: 0;
 }
 
 .step-item {
     flex: 1;
-    min-width: 250px;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 0;
+}
+
+/* Numbered badge */
+.step-num {
+    font-family: 'VistaSans', 'Inter', sans-serif;
+    font-size: 1.4rem;
+    font-weight: 300;
+    letter-spacing: 0.05em;
+    color: rgba(0,0,0,0.28);
+    margin-bottom: 0.9rem;
+    line-height: 1;
 }
 
 .step-icon {
-    width: 80px;
-    height: 80px;
+    width: 68px;
+    height: 68px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 1.5rem;
-    border: 2px solid var(--black);
+    margin-bottom: 1.25rem;
+    border: 1.5px solid rgba(0,0,0,0.25);
     border-radius: 50%;
-    background: var(--white);
+    background: transparent;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -558,8 +593,9 @@ body {
 
 .step-item:hover .step-icon {
     background: var(--black);
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    border-color: var(--black);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.13);
 }
 
 .step-item:hover .step-icon svg {
@@ -567,19 +603,21 @@ body {
 }
 
 .step-title {
-    font-size: 1.2rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--black);
-    margin-bottom: 0.75rem;
-    letter-spacing: -0.01em;
-    line-height: 1.4;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.3;
 }
 
 .step-description {
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     color: var(--gray);
     font-weight: 300;
-    line-height: 1.6;
+    line-height: 1.65;
+    max-width: 220px;
 }
 
 /* Processing Section */
@@ -1252,27 +1290,33 @@ body {
     }
     
     .steps-section {
-        flex-direction: column;
-        gap: 2rem;
-        margin-top: 0;
-        padding: 2rem 1rem;
+        padding: 2.5rem 1.5rem;
     }
-    
+
+    .steps-inner {
+        flex-direction: column;
+        align-items: center;
+        gap: 2.5rem;
+    }
+
+    .step-divider {
+        width: 40px;
+        height: 1px;
+        margin: 0;
+        align-self: auto;
+    }
+
     .step-item {
         width: 100%;
+        max-width: 320px;
     }
-    
-    .step-icon {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .step-title {
-        font-size: 1.1rem;
-    }
-    
+
     .step-description {
-        font-size: 0.9rem;
+        max-width: 100%;
+    }
+
+    .upload-core {
+        padding: 3rem 1.5rem 2.5rem;
     }
 }
 
