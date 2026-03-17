@@ -27,7 +27,20 @@ This obligation applies even when data is **only in transit** — i.e. uploaded,
 ### Recommended options
 
 - **Option A — Anonymise before upload.** Strip all patient identifiers (name, date of birth, ID) from the XLSX before it reaches the server. The application then processes only anonymous microbiome data — HDS no longer applies.
+
 - **Option B — Migrate to an HDS-certified host.** Move the deployment to OVH, Scaleway, or an AWS/Azure region with HDS certification, and formalise a data processing agreement (DPA) with the provider.
+
+- **Option C — Deploy on the clinic's own internal servers (Intranet).** Host the application on a physical server **owned and operated by the healthcare institution** (on-premises). Under Article L.1111-8, the HDS obligation targets *third-party* hosting providers. If the clinic hosts its own data on its own infrastructure, no external "hébergeur" is involved — **HDS certification is not required**, even for non-anonymised data.
+
+  > Practical setup: a dedicated Linux machine (or a Docker-capable NAS/server) on the clinic's local network, accessible only from within the premises or via the institution's VPN. No internet exposure, no third-party data processor, no HDS constraint.
+
+  | Constraint | On-premises Intranet |
+  |---|---|
+  | HDS required? | ❌ No (institution hosts its own data) |
+  | GDPR applies? | ✅ Yes — standard data controller obligations |
+  | Internet exposure | ❌ None (LAN / VPN only) |
+  | Cost | Low — existing clinic hardware |
+  | Maintenance | IT team of the institution |
 
 ---
 
