@@ -1,0 +1,176 @@
+name: Deploy OnlyOffice (first-time setup)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# This workflow is intentionally MANUAL (workflow_dispatch only).
+# Run it ONCE on the VPS to pull the OnlyOffice image (~1 GB) and start the
+# service. Subsequent regular pushes (deploy.yml) will leave OnlyOffice alone.
+#
+# Required GitHub Secrets (Settings → Secrets → Actions):
+#   VPS_SSH_KEY           — private SSH key for the VPS
+#   VPS_HOST              — VPS IP or hostname
+#   VPS_PORT              — SSH port (default 22)
+#   VPS_USER              — SSH user (e.g. root or deploy)
+#   VPS_PROJECT_PATH      — absolute path to the repo on the VPS
+#   ONLYOFFICE_JWT_SECRET — random string shared with the OnlyOffice container
+#                           generate one with: openssl rand -hex 32
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_restart:
+        description: 'Force restart OnlyOffice even if already running'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+jobs:
+  deploy-onlyoffice:
+    name: Setup OnlyOffice on VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${{ secrets.VPS_PORT || 22 }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null \
+            || ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy OnlyOffice
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              -p ${{ secrets.VPS_PORT || 22 }} \
+              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              FORCE_RESTART=${{ github.event.inputs.force_restart }} \
+              OO_JWT_SECRET='${{ secrets.ONLYOFFICE_JWT_SECRET }}' \
+              PROJECT_PATH='${{ secrets.VPS_PROJECT_PATH }}' \
+              'bash -s' << 'ENDSSH'
+            set -e
+
+            echo " Project: $PROJECT_PATH"
+            cd "$PROJECT_PATH"
+
+            # ── 1. Pull latest code ───────────────────────────────────────────
+            echo " Pulling latest code..."
+            git fetch origin
+            git reset --hard origin/main 2>/dev/null || git reset --hard origin/master
+
+            # ── 2. Configure .env ─────────────────────────────────────────────
+            echo "  Configuring .env for OnlyOffice..."
+
+            # Create .env if it doesn't exist
+            [ -f .env ] || cp env.example .env 2>/dev/null || touch .env
+
+            # Helper: add/update a key in .env without duplicating it
+            set_env() {
+              local key="$1" val="$2"
+              if grep -q "^${key}=" .env 2>/dev/null; then
+                sed -i "s|^${key}=.*|${key}=${val}|" .env
+              else
+                echo "${key}=${val}" >> .env
+              fi
+            }
+
+            # JWT secret (from GitHub Secret — never commit this to git)
+            if [ -n "$OO_JWT_SECRET" ]; then
+              set_env ONLYOFFICE_JWT_SECRET "$OO_JWT_SECRET"
+              echo "  ✓ ONLYOFFICE_JWT_SECRET set"
+            else
+              echo "    ONLYOFFICE_JWT_SECRET is empty — add it as a GitHub Secret!"
+              echo "     Generate one with: openssl rand -hex 32"
+            fi
+
+            set_env ONLYOFFICE_JWT_ENABLED   "true"
+            set_env ONLYOFFICE_BACKEND_URL   "http://backend:5000"
+
+            # ONLYOFFICE_URL: public URL of the OnlyOffice editor UI
+            # Defaults to the VPS hostname on port 8080 if not already set
+            if ! grep -q "^ONLYOFFICE_URL=" .env 2>/dev/null; then
+              HOST_IP=$(hostname -I | awk '{print $1}')
+              set_env ONLYOFFICE_URL "http://${HOST_IP}:8080"
+              echo "    ONLYOFFICE_URL defaulted to http://${HOST_IP}:8080"
+              echo "     Update this in .env if you have a domain name."
+            else
+              echo "  ✓ ONLYOFFICE_URL already set: $(grep ONLYOFFICE_URL .env | cut -d= -f2)"
+            fi
+
+            # ── 3. Ensure shared-proxy network exists ─────────────────────────
+            docker network inspect shared-proxy >/dev/null 2>&1 \
+              || docker network create shared-proxy
+            echo "  ✓ shared-proxy network ready"
+
+            # ── 4. Pull OnlyOffice image ──────────────────────────────────────
+            echo " Pulling OnlyOffice image (this may take several minutes)..."
+            docker compose pull onlyoffice
+
+            # ── 5. Start (or restart) OnlyOffice ─────────────────────────────
+            OO_RUNNING=$(docker compose ps onlyoffice --status running --quiet 2>/dev/null || true)
+
+            if [ -n "$OO_RUNNING" ] && [ "$FORCE_RESTART" != "true" ]; then
+              echo "✓ OnlyOffice is already running — skipping restart."
+              echo "  Use 'Force restart: true' in the workflow dispatch to force it."
+            else
+              if [ -n "$OO_RUNNING" ]; then
+                echo " Force-restarting OnlyOffice..."
+                docker compose stop onlyoffice || true
+              fi
+              echo " Starting OnlyOffice..."
+              docker compose up -d --no-deps onlyoffice
+            fi
+
+            # ── 6. Wait for OnlyOffice to become healthy ──────────────────────
+            echo " Waiting for OnlyOffice to become healthy (up to 3 min)..."
+            MAX_WAIT=36   # 36 × 5s = 180s
+            COUNT=0
+            HEALTHY=false
+
+            while [ $COUNT -lt $MAX_WAIT ]; do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' \
+                         report-generator-onlyoffice 2>/dev/null || echo "unknown")
+
+              if [ "$STATUS" = "healthy" ]; then
+                HEALTHY=true
+                break
+              fi
+
+              # Also try HTTP directly (healthcheck might not be configured)
+              if docker exec report-generator-onlyoffice \
+                   curl -sf http://localhost/healthcheck >/dev/null 2>&1; then
+                HEALTHY=true
+                break
+              fi
+
+              COUNT=$((COUNT + 1))
+              echo "  [$((COUNT * 5))s] Status: $STATUS — waiting..."
+              sleep 5
+            done
+
+            if [ "$HEALTHY" = "true" ]; then
+              echo ""
+              echo " OnlyOffice is healthy!"
+              echo ""
+              echo "── Summary ────────────────────────────────────────────────"
+              docker compose ps onlyoffice
+              echo ""
+              OO_URL=$(grep "^ONLYOFFICE_URL=" .env | cut -d= -f2)
+              echo "  Editor UI : $OO_URL"
+              echo "  Backend   : $(grep ONLYOFFICE_BACKEND_URL .env | cut -d= -f2)"
+              echo "  JWT       : $(grep ONLYOFFICE_JWT_ENABLED .env | cut -d= -f2)"
+              echo "────────────────────────────────────────────────────────────"
+            else
+              echo ""
+              echo "  OnlyOffice did not become healthy within 3 minutes."
+              echo "   This is normal on the first start — the service may still"
+              echo "   be initialising. Check with:"
+              echo "     docker compose logs -f onlyoffice"
+              echo ""
+              docker compose ps onlyoffice
+              # Don't fail the workflow — OnlyOffice just needs more time
+            fi
+          ENDSSH
