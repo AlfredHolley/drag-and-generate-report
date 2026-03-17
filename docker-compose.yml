@@ -45,8 +45,44 @@ services:
       - app-network
       - shared-proxy
 
+  # ── OnlyOffice Document Server ──────────────────────────────────────────────
+  # Full in-browser Word editor (Community Edition, open-source)
+  # Needs ~2 GB RAM. JWT_SECRET must match ONLYOFFICE_JWT_SECRET in backend.
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: report-generator-onlyoffice
+    restart: unless-stopped
+    environment:
+      - JWT_ENABLED=${ONLYOFFICE_JWT_ENABLED:-true}
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:-changeme_replace_in_production}
+      - JWT_HEADER=Authorization
+      - JWT_IN_BODY=true
+    volumes:
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_logs:/var/log/onlyoffice
+      - onlyoffice_cache:/var/lib/onlyoffice
+    # ── Port mapping (local dev / direct access) ──────────────────────────────
+    # Exposes the editor UI on http://localhost:8080
+    # In production: comment out ports and use your Traefik/proxy labels instead.
+    ports:
+      - "${ONLYOFFICE_PORT:-8080}:80"
+    networks:
+      - app-network    # allows backend to call http://onlyoffice/
+      - shared-proxy   # allows your reverse proxy to route traffic to it
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/healthcheck"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 120s  # OnlyOffice takes ~1 min to start
+
 networks:
   app-network:
     driver: bridge
   shared-proxy:
     external: true
+
+volumes:
+  onlyoffice_data:
+  onlyoffice_logs:
+  onlyoffice_cache:

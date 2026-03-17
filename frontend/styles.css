@@ -779,17 +779,126 @@ body {
 }
 
 .toolbar-center-label {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    /* When used as a plain label (text) */
     font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: #555;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
     pointer-events: none;
+}
+
+/* ── Preview mode tabs (PDF | Word) ───────────────────────────────────────── */
+.preview-tabs {
+    /* overrides the plain-label "pointer-events: none" */
+    pointer-events: auto;
+    display: flex;
+    gap: 2px;
+    background: #e4e2dc;
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.preview-tab {
+    padding: 4px 13px;
+    font-size: 0.69rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: transparent;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #888;
+    transition: background 0.14s, color 0.14s;
     white-space: nowrap;
 }
+
+.preview-tab.active {
+    background: #fff;
+    color: #222;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12);
+}
+
+.preview-tab:not(.active):hover {
+    background: rgba(255,255,255,0.5);
+    color: #444;
+}
+
+/* ── OnlyOffice editor container ──────────────────────────────────────────── */
+#onlyofficeContainer {
+    display: none;          /* hidden while in PDF mode */
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    background: #f0eff0;
+}
+
+#onlyofficeContainer.oo-active {
+    display: flex;
+}
+
+#onlyoffice-editor {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    /* DocsAPI.DocEditor injects an iframe here */
+}
+
+#onlyoffice-editor iframe {
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+}
+
+/* Loading + error states inside the editor div */
+.oo-loading,
+.oo-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 300px;
+    gap: 12px;
+    color: #888;
+    font-size: 0.88rem;
+    text-align: center;
+    padding: 24px;
+}
+
+.oo-error {
+    color: #b33;
+}
+
+.oo-error code {
+    font-size: 0.8rem;
+    background: #f5f3f0;
+    padding: 4px 10px;
+    border-radius: 3px;
+    color: #555;
+}
+
+.oo-retry-btn {
+    margin-top: 8px;
+    padding: 7px 18px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #333;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.oo-retry-btn:hover { background: #555; }
 
 .toolbar-right-group {
     display: flex;
@@ -836,6 +945,23 @@ body {
     background: #333;
     border-color: #333;
     color: #fff;
+}
+
+.toolbar-docx-btn {
+    background: #1a5276;
+    color: #fff;
+    border-color: #1a5276;
+}
+
+.toolbar-docx-btn:hover {
+    background: #1f618d;
+    border-color: #1f618d;
+    color: #fff;
+}
+
+.toolbar-docx-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
 }
 
 .pane-resizer {

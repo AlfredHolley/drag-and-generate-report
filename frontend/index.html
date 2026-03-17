@@ -129,7 +129,7 @@
                     <!-- ── Two-pane viewer ── -->
                     <div class="result-panes" id="resultPanes">
 
-                        <!-- Left — PDF preview -->
+                        <!-- Left — PDF / Word preview -->
                         <div class="result-pane-preview" id="panePreview">
                             <div class="result-pane-preview-label">
                                 <!-- Left: back to upload -->
@@ -137,11 +137,14 @@
                                     ← New file
                                 </button>
 
-                                <!-- Center: label -->
-                                <span class="toolbar-center-label">Report preview</span>
+                                <!-- Center: mode tabs -->
+                                <div class="preview-tabs toolbar-center-label">
+                                    <button class="preview-tab active" id="tabPdf"  onclick="switchPreviewTab('pdf')">PDF</button>
+                                    <button class="preview-tab"        id="tabWord" onclick="switchPreviewTab('word')">✎ Word</button>
+                                </div>
 
-                                <!-- Right: zoom + download -->
-                                <div class="toolbar-right-group">
+                                <!-- Right: PDF toolbar -->
+                                <div class="toolbar-right-group" id="toolbarPdf">
                                     <div class="zoom-controls">
                                         <button class="zoom-btn" onclick="changeZoom(-0.15)" title="Zoom out">−</button>
                                         <span class="zoom-level" id="zoomLabel">100%</span>
@@ -150,12 +153,30 @@
                                     </div>
                                     <div class="toolbar-sep"></div>
                                     <button class="toolbar-action-btn toolbar-download-btn" id="downloadPdfBtn" title="Download PDF">
-                                        ↓ Download PDF
+                                        ↓ PDF
+                                    </button>
+                                    <button class="toolbar-action-btn toolbar-docx-btn" id="downloadDocxBtn" title="Download Word document">
+                                        ↓ DOCX
+                                    </button>
+                                </div>
+
+                                <!-- Right: Word editor toolbar (hidden initially) -->
+                                <div class="toolbar-right-group" id="toolbarWord" style="display:none;">
+                                    <button class="toolbar-action-btn toolbar-download-btn" id="downloadWordEditedBtn"
+                                            title="Download the edited Word document" onclick="downloadEditedDocx()">
+                                        ↓ Download DOCX
                                     </button>
                                 </div>
                             </div>
+
+                            <!-- PDF canvas (default) -->
                             <div class="result-pane-preview-scroll" id="pdfCanvasContainer">
                                 <!-- PDF pages rendered as <canvas> elements by PDF.js -->
+                            </div>
+
+                            <!-- OnlyOffice Word editor (hidden until Word tab activated) -->
+                            <div id="onlyofficeContainer">
+                                <div id="onlyoffice-editor"></div>
                             </div>
                         </div>
 
@@ -259,6 +280,12 @@
         let pdfFilename     = 'report.pdf';
         let doctorComments  = {};     // {pageNum (int): commentText (str)}
         let parametersCache = [];     // list of parameter names from the loaded file
+
+        // ── OnlyOffice state ─────────────────────────────────────────────────
+        let _ooSessionKey   = null;   // current OnlyOffice session key
+        let _ooEditor       = null;   // DocsAPI.DocEditor instance
+        let _ooDownloadUrl  = null;   // /api/office/download/<key>
+        let _currentTab     = 'pdf';  // 'pdf' | 'word'
 
         // ── Drag & Drop ──────────────────────────────────────────────────
         dropZone.addEventListener('click', () => fileInput.click());
@@ -371,13 +398,17 @@
                 if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
                 pdfBlobUrl = URL.createObjectURL(pdfBlob);
 
-                // ── Wire up download button ────────────────────────────────
+                // ── Wire up PDF download button ────────────────────────────
                 document.getElementById('downloadPdfBtn').onclick = () => {
                     const a = document.createElement('a');
                     a.href = pdfBlobUrl;
                     a.download = pdfFilename;
                     a.click();
                 };
+
+                // ── Wire up DOCX download button ───────────────────────────
+                document.getElementById('downloadDocxBtn').onclick = () =>
+                    downloadDocx();
 
                 showSection('result');
 
@@ -493,6 +524,28 @@
             document.getElementById('commentsList').innerHTML = '';
             document.getElementById('regenBtn').classList.add('hidden');
             renderParamsList();   // reset to "No file loaded"
+
+            // ── Reset OnlyOffice state ────────────────────────────────────────
+            _ooSessionKey  = null;
+            _ooDownloadUrl = null;
+            if (_ooEditor) {
+                try { _ooEditor.destroyEditor(); } catch (e) {}
+                _ooEditor = null;
+            }
+            document.getElementById('onlyoffice-editor').innerHTML = '';
+            document.getElementById('onlyofficeContainer').classList.remove('oo-active');
+            // Reset to PDF tab
+            _currentTab = 'pdf';
+            document.getElementById('tabPdf').classList.add('active');
+            document.getElementById('tabWord').classList.remove('active');
+            document.getElementById('toolbarPdf').style.display  = '';
+            document.getElementById('toolbarWord').style.display = 'none';
+            document.getElementById('pdfCanvasContainer').style.display = '';
+            const cp = document.getElementById('doctorCommentsPanel');
+            const rz = document.getElementById('paneResizer');
+            if (cp) cp.style.display = '';
+            if (rz) rz.style.display = '';
+
             showSection('upload');
         }
 
@@ -671,6 +724,47 @@
             document.getElementById('mentionDropdown').classList.add('hidden');
         }
 
+        // ── DOCX download ─────────────────────────────────────────────────────
+        async function downloadDocx() {
+            if (!selectedFile) return;
+
+            const btn = document.getElementById('downloadDocxBtn');
+            const origText = btn.textContent;
+            btn.textContent = '…';
+            btn.disabled = true;
+
+            try {
+                const fd = new FormData();
+                fd.append('file', selectedFile);
+                fd.append('comments', JSON.stringify(doctorComments));
+
+                const resp = await fetch('/api/generate-docx', {
+                    method: 'POST',
+                    body: fd
+                });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    alert('DOCX error: ' + (err.error || 'Unknown error'));
+                    return;
+                }
+                const buf  = await resp.arrayBuffer();
+                const blob = new Blob([buf], {
+                    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                });
+                const url  = URL.createObjectURL(blob);
+                const a    = document.createElement('a');
+                a.href     = url;
+                a.download = (pdfFilename || 'report').replace(/\.pdf$/i, '.docx');
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
+            } catch (err) {
+                alert('DOCX generation failed: ' + err.message);
+            } finally {
+                btn.textContent = origText;
+                btn.disabled = false;
+            }
+        }
+
         async function regenerateWithComments() {
             if (!selectedFile) return;
 
@@ -711,6 +805,111 @@
             } finally {
                 regenSpinner.classList.add('hidden');
                 regenBtn.classList.remove('hidden');
+            }
+        }
+
+        // ── OnlyOffice Word editor ────────────────────────────────────────────
+
+        function switchPreviewTab(tab) {
+            if (_currentTab === tab) return;
+            _currentTab = tab;
+            const isPdf = tab === 'pdf';
+
+            // Tab buttons
+            document.getElementById('tabPdf').classList.toggle('active', isPdf);
+            document.getElementById('tabWord').classList.toggle('active', !isPdf);
+
+            // Panels
+            document.getElementById('pdfCanvasContainer').style.display = isPdf ? '' : 'none';
+            document.getElementById('onlyofficeContainer').classList.toggle('oo-active', !isPdf);
+
+            // Toolbars
+            document.getElementById('toolbarPdf').style.display  = isPdf ? '' : 'none';
+            document.getElementById('toolbarWord').style.display = isPdf ? 'none' : '';
+
+            // Doctor comments panel + resizer (hidden in Word mode — editor is full width)
+            const commentsPanel = document.getElementById('doctorCommentsPanel');
+            const resizer       = document.getElementById('paneResizer');
+            if (commentsPanel) commentsPanel.style.display = isPdf ? '' : 'none';
+            if (resizer)       resizer.style.display       = isPdf ? '' : 'none';
+
+            // Initialize OnlyOffice the first time the Word tab is activated
+            if (!isPdf && !_ooSessionKey) {
+                initOnlyOffice();
+            }
+        }
+
+        async function initOnlyOffice() {
+            const editor = document.getElementById('onlyoffice-editor');
+            editor.innerHTML =
+                '<div class="oo-loading"><div class="spinner" style="width:36px;height:36px;"></div>' +
+                '<p>Preparing Word editor…</p><p style="font-size:0.75rem;color:#aaa;">This may take a moment on first load.</p></div>';
+
+            if (!selectedFile) return;
+
+            try {
+                const fd = new FormData();
+                fd.append('file', selectedFile);
+                fd.append('comments', JSON.stringify(doctorComments));
+
+                const resp = await fetch('/api/office/session', { method: 'POST', body: fd });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.error || 'Failed to create editing session');
+                }
+
+                const data = await resp.json();
+                _ooSessionKey  = data.key;
+                _ooDownloadUrl = data.download_url;
+
+                // Load the OnlyOffice JS API from the document server
+                const script  = document.createElement('script');
+                script.src    = data.onlyoffice_url + '/web-apps/apps/api/documents/api.js';
+                script.onload = () => {
+                    try {
+                        editor.innerHTML = ''; // clear loading spinner
+                        _ooEditor = new DocsAPI.DocEditor('onlyoffice-editor', data.oo_config);
+                    } catch (e) {
+                        editor.innerHTML =
+                            '<div class="oo-error"><p>Editor init failed: ' + e.message + '</p>' +
+                            '<button class="oo-retry-btn" onclick="retryOnlyOffice()">Retry</button></div>';
+                    }
+                };
+                script.onerror = () => {
+                    editor.innerHTML =
+                        '<div class="oo-error">' +
+                        '<p>Could not reach the OnlyOffice server.</p>' +
+                        '<p>Expected URL: <code>' + data.onlyoffice_url + '</code></p>' +
+                        '<p style="font-size:0.8rem;color:#888;">Make sure the <strong>onlyoffice</strong> Docker service is running.</p>' +
+                        '<button class="oo-retry-btn" onclick="retryOnlyOffice()">↻ Retry</button>' +
+                        '</div>';
+                };
+                document.head.appendChild(script);
+
+            } catch (err) {
+                document.getElementById('onlyoffice-editor').innerHTML =
+                    '<div class="oo-error"><p>Error: ' + err.message + '</p>' +
+                    '<button class="oo-retry-btn" onclick="retryOnlyOffice()">↻ Retry</button></div>';
+            }
+        }
+
+        function retryOnlyOffice() {
+            _ooSessionKey = null;
+            if (_ooEditor) {
+                try { _ooEditor.destroyEditor(); } catch (e) {}
+                _ooEditor = null;
+            }
+            initOnlyOffice();
+        }
+
+        function downloadEditedDocx() {
+            if (_ooDownloadUrl) {
+                // Trigger a force-save in OnlyOffice before downloading
+                if (_ooEditor) {
+                    try { _ooEditor.requestSave(); } catch (e) {}
+                }
+                // Small delay to let the callback propagate
+                setTimeout(() => { window.location.href = _ooDownloadUrl; }, 800);
             }
         }
 

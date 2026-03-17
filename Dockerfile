@@ -39,8 +39,9 @@ COPY backend/ /app/
 # Copy fonts directory
 COPY fonts/ /app/fonts/
 
-# Copy logo from frontend directory
+# Copy logos from frontend directory (SVG for PDF generator, PNG for DOCX generator)
 COPY frontend/logo_bw.svg /app/logo_bw.svg
+COPY frontend/logo_bw.png /app/logo_bw.png
 
 # Create directories for uploads and outputs
 RUN mkdir -p /app/uploads /app/outputs

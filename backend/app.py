@@ -9,11 +9,16 @@ Endpoint principal : POST /api/convert
 import os
 import io
 import json
+import time
+import uuid
+import urllib.request as _urllib_req
+import re as _re
 import pandas as pd
 from flask import Flask, request, Response, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-from pdf_generator.microbiome_pdf import generate_microbiome_pdf, MicrobiomePDFGenerator
+from pdf_generator.microbiome_pdf  import generate_microbiome_pdf, MicrobiomePDFGenerator
+from pdf_generator.microbiome_docx import generate_microbiome_docx
 
 # Le dossier frontend est un niveau au-dessus du backend
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), '..', 'frontend')
@@ -32,6 +37,39 @@ app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# ── OnlyOffice configuration ──────────────────────────────────────────────────
+# URL the browser uses to load the OnlyOffice editor UI
+# Local dev : http://localhost:8080  |  Prod : https://office.yourdomain.com
+ONLYOFFICE_URL         = os.environ.get('ONLYOFFICE_URL', 'http://localhost:8080')
+# URL the OnlyOffice *server* (Docker container) uses to reach this Flask backend
+# In Docker this is always the internal network name
+ONLYOFFICE_BACKEND_URL = os.environ.get('ONLYOFFICE_BACKEND_URL', 'http://backend:5000')
+# JWT secret shared with the OnlyOffice container (set JWT_ENABLED=true in compose)
+ONLYOFFICE_JWT_SECRET  = os.environ.get('ONLYOFFICE_JWT_SECRET', '')
+
+# In-memory editing sessions { key: {bytes, filename, patient_name, created} }
+_oo_sessions: dict = {}
+_OO_SESSION_TTL = 3600  # seconds
+
+
+def _oo_sign(payload: dict) -> str:
+    """Return a JWT token for the OnlyOffice editor config, or '' if JWT is disabled."""
+    if not ONLYOFFICE_JWT_SECRET:
+        return ''
+    try:
+        import jwt as _jwt  # PyJWT
+        return _jwt.encode(payload, ONLYOFFICE_JWT_SECRET, algorithm='HS256')
+    except Exception:
+        return ''
+
+
+def _oo_cleanup() -> None:
+    """Lazily remove expired editing sessions."""
+    now = time.time()
+    expired = [k for k, v in _oo_sessions.items() if now - v['created'] > _OO_SESSION_TTL]
+    for k in expired:
+        del _oo_sessions[k]
 
 
 def allowed_file(filename: str) -> bool:
@@ -249,7 +287,6 @@ def generate_pdf():
             comments = {}
 
         # Extract @[Parameter Name] citations from all comment texts
-        import re as _re
         cited_params: set = set()
         for text in comments.values():
             for match in _re.findall(r'@\[([^\]]+)\]', str(text)):
@@ -282,6 +319,85 @@ def generate_pdf():
         return jsonify({'error': f'Erreur lors de la génération du PDF : {str(e)}'}), 500
 
 
+@app.route('/api/generate-docx', methods=['POST'])
+def generate_docx():
+    """
+    Convert an XLSX/XLS file to a microbiome Word (.docx) report.
+
+    Body (multipart/form-data):
+        file        : The Excel file
+        sheet_name  : (optional) Sheet index or name
+        comments    : (optional) JSON string  {pageNumber: "comment text", …}
+
+    Response:
+        application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Empty filename'}), 400
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'Unsupported format. Use .xlsx or .xls'}), 400
+
+    sheet_param = request.form.get('sheet_name', 0)
+    try:
+        sheet_param = int(sheet_param)
+    except (ValueError, TypeError):
+        pass
+
+    try:
+        file_bytes = file.read()
+        xl_file    = pd.ExcelFile(io.BytesIO(file_bytes), engine='openpyxl')
+
+        if isinstance(sheet_param, int):
+            if sheet_param >= len(xl_file.sheet_names):
+                return jsonify({'error': f'Sheet index {sheet_param} out of range'}), 400
+            sheet_name = xl_file.sheet_names[sheet_param]
+        else:
+            if sheet_param not in xl_file.sheet_names:
+                return jsonify({'error': f'Sheet "{sheet_param}" not found'}), 400
+            sheet_name = sheet_param
+
+        df = xl_file.parse(sheet_name)
+
+        # Optional doctor comments
+        comments_raw = request.form.get('comments', '{}')
+        try:
+            comments = json.loads(comments_raw)
+        except Exception:
+            comments = {}
+
+        cited_params: set = set()
+        for text in comments.values():
+            for match in _re.findall(r'@\[([^\]]+)\]', str(text)):
+                cited_params.add(match.strip())
+
+        docx_bytes = generate_microbiome_docx(df, comments=comments,
+                                              cited_params=cited_params or None)
+
+        base_name    = secure_filename(file.filename).rsplit('.', 1)[0]
+        patient_name = ''
+        if 'DescripcionMuestra' in df.columns:
+            v = df['DescripcionMuestra'].iloc[0]
+            if not pd.isna(v):
+                patient_name = str(v).strip()
+
+        return Response(
+            docx_bytes,
+            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            headers={
+                'Content-Disposition': f'attachment; filename="{base_name}_report.docx"',
+                'X-Patient-Name': patient_name,
+                'Access-Control-Expose-Headers': 'X-Patient-Name',
+            }
+        )
+
+    except Exception as e:
+        return jsonify({'error': f'DOCX generation error: {str(e)}'}), 500
+
+
 @app.route('/api/sheets', methods=['POST'])
 def list_sheets():
     """
@@ -306,6 +422,173 @@ def list_sheets():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ── OnlyOffice editing endpoints ─────────────────────────────────────────────
+
+@app.route('/api/office/session', methods=['POST'])
+def office_create_session():
+    """
+    Generate a DOCX and open an OnlyOffice editing session.
+
+    Returns the complete DocsAPI.DocEditor config so the frontend can
+    load the editor without knowing internal URLs.
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'Unsupported format. Use .xlsx or .xls'}), 400
+
+    sheet_param = request.form.get('sheet_name', 0)
+    try:
+        sheet_param = int(sheet_param)
+    except (ValueError, TypeError):
+        pass
+
+    try:
+        file_bytes = file.read()
+        xl_file    = pd.ExcelFile(io.BytesIO(file_bytes), engine='openpyxl')
+
+        if isinstance(sheet_param, int):
+            sheet_name = xl_file.sheet_names[min(sheet_param, len(xl_file.sheet_names) - 1)]
+        else:
+            sheet_name = sheet_param if sheet_param in xl_file.sheet_names else xl_file.sheet_names[0]
+
+        df = xl_file.parse(sheet_name)
+
+        comments_raw = request.form.get('comments', '{}')
+        try:
+            comments = json.loads(comments_raw)
+        except Exception:
+            comments = {}
+
+        cited_params: set = set()
+        for text in comments.values():
+            for match in _re.findall(r'@\[([^\]]+)\]', str(text)):
+                cited_params.add(match.strip())
+
+        docx_bytes = generate_microbiome_docx(df, comments=comments,
+                                              cited_params=cited_params or None)
+
+        # Patient name for display
+        patient_name = ''
+        if 'DescripcionMuestra' in df.columns:
+            v = df['DescripcionMuestra'].iloc[0]
+            if not pd.isna(v):
+                patient_name = str(v).strip()
+
+        base_name = secure_filename(file.filename).rsplit('.', 1)[0]
+        filename  = f'{base_name}_report.docx'
+
+        # Store session
+        key = str(uuid.uuid4())
+        _oo_cleanup()
+        _oo_sessions[key] = {
+            'bytes':        docx_bytes,
+            'filename':     filename,
+            'patient_name': patient_name,
+            'created':      time.time(),
+        }
+
+        # Build OnlyOffice editor config
+        doc_url      = f'{ONLYOFFICE_BACKEND_URL}/api/office/doc/{key}'
+        callback_url = f'{ONLYOFFICE_BACKEND_URL}/api/office/callback/{key}'
+
+        oo_config = {
+            'document': {
+                'fileType': 'docx',
+                'key':      key,
+                'title':    filename,
+                'url':      doc_url,
+            },
+            'editorConfig': {
+                'callbackUrl': callback_url,
+                'mode':        'edit',
+                'lang':        'en',
+                'user':        {'id': 'doctor-1', 'name': patient_name or 'Doctor'},
+                'customization': {
+                    'autosave':   True,
+                    'forcesave':  False,
+                    'chat':       False,
+                    'toolbar':    True,
+                    'statusBar':  True,
+                    'header':     False,
+                },
+            },
+            'documentType': 'word',
+            'height': '100%',
+            'width':  '100%',
+        }
+
+        # Sign config with JWT if a secret is configured
+        token = _oo_sign(oo_config)
+        if token:
+            oo_config['token'] = token
+
+        return jsonify({
+            'key':           key,
+            'filename':      filename,
+            'oo_config':     oo_config,
+            'download_url':  f'/api/office/download/{key}',
+            'onlyoffice_url': ONLYOFFICE_URL,
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/office/doc/<key>', methods=['GET'])
+def office_get_doc(key):
+    """Serve the DOCX file to the OnlyOffice Document Server."""
+    session = _oo_sessions.get(key)
+    if not session:
+        return jsonify({'error': 'Session not found or expired'}), 404
+    return Response(
+        session['bytes'],
+        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        headers={'Content-Disposition': f'inline; filename="{session["filename"]}"'},
+    )
+
+
+@app.route('/api/office/callback/<key>', methods=['POST'])
+def office_callback(key):
+    """
+    OnlyOffice callback — called by the Document Server when the document is saved.
+    status 2 = document ready for saving  |  status 6 = force-save requested
+    """
+    data   = request.get_json(silent=True) or {}
+    status = data.get('status', 0)
+
+    if status in (2, 6):
+        download_url = data.get('url', '')
+        if download_url and key in _oo_sessions:
+            try:
+                with _urllib_req.urlopen(download_url, timeout=30) as resp:
+                    updated = resp.read()
+                _oo_sessions[key]['bytes'] = updated
+            except Exception as e:
+                return jsonify({'error': 1, 'message': str(e)}), 500
+
+    return jsonify({'error': 0})
+
+
+@app.route('/api/office/download/<key>', methods=['GET'])
+def office_download(key):
+    """Download the (potentially edited) DOCX from an OnlyOffice session."""
+    session = _oo_sessions.get(key)
+    if not session:
+        return jsonify({'error': 'Session not found or expired'}), 404
+    return Response(
+        session['bytes'],
+        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        headers={
+            'Content-Disposition': f'attachment; filename="{session["filename"]}"',
+            'X-Patient-Name':      session.get('patient_name', ''),
+            'Access-Control-Expose-Headers': 'X-Patient-Name',
+        },
+    )
 
 
 # ── Lancement ────────────────────────────────────────────────────────────────
