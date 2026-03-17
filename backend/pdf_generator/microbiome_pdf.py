@@ -24,13 +24,8 @@ from reportlab.platypus import (
     PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle,
 )
 
-# Optional SVG logo support (requires svglib + pycairo)
-try:
-    from svglib.svglib import svg2rlg
-    from reportlab.graphics import renderPDF as svgRenderPDF
-    SVG_AVAILABLE = True
-except ImportError:
-    SVG_AVAILABLE = False
+# PNG logo support — native ReportLab, no extra dependency needed
+from reportlab.lib.utils import ImageReader
 
 
 # ── Colour palette ─────────────────────────────────────────────────────────────
@@ -358,14 +353,16 @@ class MicrobiomePDFGenerator:
         self.cited_params: set = set(cited_params) if cited_params else set()
 
         # Resolve asset paths — works both locally and inside Docker.
-        # Local:  repo/backend/pdf_generator/  → ../../fonts  &  ../../frontend/logo_bw.svg
-        # Docker: backend/ copied to /app/     →  /app/fonts  &  /app/logo_bw.svg
+        # Local:  repo/backend/pdf_generator/  → ../../fonts  &  ../../frontend/logo_bw.png
+        # Docker: backend/ copied to /app/     →  /app/fonts  &  /app/logo_bw.png
         _base        = os.path.dirname(os.path.abspath(__file__))
         _repo        = os.path.normpath(os.path.join(_base, '..', '..'))
         _fonts_local = os.path.join(_repo, 'fonts')
-        _logo_local  = os.path.join(_repo, 'frontend', 'logo_bw.svg')
+        _logo_local  = os.path.join(_repo, 'frontend', 'logo_bw.png')
         self._fonts_dir = _fonts_local  if os.path.isdir(_fonts_local)   else '/app/fonts'
-        self._logo_path = _logo_local   if os.path.exists(_logo_local)   else '/app/logo_bw.svg'
+        _logo_docker    = '/app/logo_bw.png'
+        self._logo_path = (_logo_local   if os.path.exists(_logo_local)
+                           else (_logo_docker if os.path.exists(_logo_docker) else None))
 
         self._extract_patient_info()
         self._register_fonts()
@@ -456,20 +453,24 @@ class MicrobiomePDFGenerator:
         canvas.saveState()
         w, h = A4
 
-        # ── Optional SVG logo ──────────────────────────────────────────────────
+        # ── Optional PNG logo (native ReportLab — no extra dependency) ───────────
         logo_drawn = False
-        if SVG_AVAILABLE and os.path.exists(self._logo_path):
+        if self._logo_path and os.path.exists(self._logo_path):
             try:
-                drw = svg2rlg(self._logo_path)
-                if drw:
-                    scale = 1.9
-                    drw.width  *= scale
-                    drw.height *= scale
-                    drw.transform = (scale, 0, 0, scale, 0, 0)
-                    x_logo = (w - drw.width) / 2
-                    y_logo = h * 0.76
-                    svgRenderPDF.draw(drw, canvas, x_logo, y_logo)
-                    logo_drawn = True
+                logo_w_pt = 200.0                          # display width in points
+                img       = ImageReader(self._logo_path)
+                iw, ih    = img.getSize()
+                logo_h_pt = logo_w_pt * ih / iw            # preserve aspect ratio
+                x_logo    = (w - logo_w_pt) / 2
+                y_logo    = h * 0.76                       # bottom edge of logo
+                canvas.drawImage(
+                    self._logo_path,
+                    x_logo, y_logo,
+                    width=logo_w_pt, height=logo_h_pt,
+                    preserveAspectRatio=True,
+                    mask='auto',
+                )
+                logo_drawn = True
             except Exception:
                 pass
 
