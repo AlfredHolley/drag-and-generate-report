@@ -4,6 +4,33 @@
 
 ---
 
+## ⚠️ Legal & Compliance Notice — Medical Data Hosting (France / EU)
+
+> **This application is not currently compliant for processing non-anonymised patient data.**
+
+Under French law (**Article L.1111-8 of the Code de la Santé Publique**) and EU GDPR (Art. 9 — special categories of personal data), **personal health data must be hosted exclusively by a provider holding HDS certification** (*Hébergement de Données de Santé*).
+
+This obligation applies even when data is **only in transit** — i.e. uploaded, processed, and immediately discarded without being written to disk. The mere fact that identifiable health data passes through a server is sufficient to trigger the HDS requirement.
+
+**The current deployment target (Hostinger VPS) is not HDS-certified.**
+
+### Compliant hosting providers (France)
+
+| Provider | HDS Certification |
+|---|---|
+| OVHcloud (Healthcare offer) | ✅ Certified |
+| Scaleway | ✅ Certified |
+| AWS Paris (`eu-west-3`) | ✅ Certified |
+| Azure France Central | ✅ Certified |
+| Hostinger | ❌ Not certified |
+
+### Recommended options
+
+- **Option A — Anonymise before upload.** Strip all patient identifiers (name, date of birth, ID) from the XLSX before it reaches the server. The application then processes only anonymous microbiome data — HDS no longer applies.
+- **Option B — Migrate to an HDS-certified host.** Move the deployment to OVH, Scaleway, or an AWS/Azure region with HDS certification, and formalise a data processing agreement (DPA) with the provider.
+
+---
+
 ## Overview
 
 ```

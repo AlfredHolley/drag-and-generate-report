@@ -12,9 +12,23 @@ import json
 import pandas as pd
 from flask import Flask, request, Response, jsonify, send_from_directory
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from werkzeug.utils import secure_filename
 from pdf_generator.microbiome_pdf  import generate_microbiome_pdf, MicrobiomePDFGenerator
 from pdf_generator.microbiome_docx import generate_microbiome_docx
+
+# ── Security configuration ────────────────────────────────────────────────────
+from security_config import (
+    ALLOWED_ORIGINS,
+    SECURITY_HEADERS,
+    RATE_LIMIT_PER_MINUTE,
+    RATE_LIMIT_PER_HOUR,
+    RATE_LIMIT_UPLOAD_PER_HOUR,
+    API_KEY,
+    validate_api_key,
+    sanitize_log_message,
+)
 
 # Le dossier frontend est un niveau au-dessus du backend
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), '..', 'frontend')
@@ -24,9 +38,41 @@ FONTS_DIR = os.path.join(_BASE, '..', 'fonts') if os.path.isdir(
     os.path.join(_BASE, '..', 'fonts')) else '/app/fonts'
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
-CORS(app)
 
-# ── Configuration ────────────────────────────────────────────────────────────
+# ── CORS — restricted to configured origins ───────────────────────────────────
+CORS(app, origins=ALLOWED_ORIGINS)
+
+# ── Rate limiting ─────────────────────────────────────────────────────────────
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[
+        f"{RATE_LIMIT_PER_HOUR} per hour",
+        f"{RATE_LIMIT_PER_MINUTE} per minute",
+    ],
+    storage_uri=os.environ.get('REDIS_URL', 'memory://'),
+)
+
+# ── Security headers on every response ───────────────────────────────────────
+@app.after_request
+def add_security_headers(response):
+    for header, value in SECURITY_HEADERS.items():
+        response.headers[header] = value
+    return response
+
+# ── Optional API key protection on all /api/ endpoints ───────────────────────
+@app.before_request
+def check_api_key():
+    """If API_KEY is set, every /api/ call (except /api/health) must carry
+    the correct X-Api-Key header."""
+    if not request.path.startswith('/api/'):
+        return  # static files, fonts — not protected
+    if request.path == '/api/health':
+        return  # health check always public
+    if not validate_api_key(request):
+        return jsonify({'error': 'Unauthorized — missing or invalid API key'}), 401
+
+# ── Configuration ─────────────────────────────────────────────────────────────
 ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
 MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50 MB
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
@@ -60,6 +106,7 @@ def health():
 
 
 @app.route('/api/convert', methods=['POST'])
+@limiter.limit(f"{RATE_LIMIT_UPLOAD_PER_HOUR} per hour")
 def convert_xlsx_to_csv():
     """
     Convertit un fichier XLSX/XLS en CSV.
@@ -190,6 +237,7 @@ def list_parameters():
 
 
 @app.route('/api/generate-pdf', methods=['POST'])
+@limiter.limit(f"{RATE_LIMIT_UPLOAD_PER_HOUR} per hour")
 def generate_pdf():
     """
     Convertit un fichier XLSX/XLS en rapport PDF microbiome.
@@ -284,6 +332,7 @@ def generate_pdf():
 
 
 @app.route('/api/generate-docx', methods=['POST'])
+@limiter.limit(f"{RATE_LIMIT_UPLOAD_PER_HOUR} per hour")
 def generate_docx():
     """
     Convert an XLSX/XLS file to a microbiome Word (.docx) report.
@@ -530,4 +579,5 @@ def list_sheets():
 
 # ── Lancement ────────────────────────────────────────────────────────────────
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    _debug = os.environ.get('FLASK_ENV', 'development') != 'production'
+    app.run(debug=_debug, host='0.0.0.0', port=5000)
