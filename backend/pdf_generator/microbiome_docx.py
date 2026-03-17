@@ -396,7 +396,11 @@ class MicrobiomeDOCXGenerator:
                 p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 p_logo.paragraph_format.space_before = Pt(_LOGO_BEFORE)
                 p_logo.paragraph_format.space_after  = Pt(_LOGO_AFTER)
-                p_logo.add_run().add_picture(self._logo_path, width=_LOGO_W)
+                _pic = p_logo.add_run().add_picture(self._logo_path, width=_LOGO_W)
+                # Add alt text (descr) — required by strict OOXML parsers
+                _doc_pr = _pic._inline.find(qn('wp:docPr'))
+                if _doc_pr is not None:
+                    _doc_pr.set('descr', 'Buchinger Wilhelmi logo')
                 logo_drawn = True
             except Exception:
                 pass
