@@ -57,6 +57,8 @@ services:
       - JWT_SECRET=${ONLYOFFICE_JWT_SECRET:-changeme_replace_in_production}
       - JWT_HEADER=Authorization
       - JWT_IN_BODY=true
+      # Required so OnlyOffice honours X-Forwarded-Proto and generates https:// URLs
+      - PROXY_ADDRESS_FORWARDING=true
     volumes:
       - onlyoffice_data:/var/www/onlyoffice/Data
       - onlyoffice_logs:/var/log/onlyoffice
