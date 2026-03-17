@@ -504,7 +504,8 @@ def office_create_session():
         }
 
         # Build OnlyOffice editor config
-        doc_url      = f'{ONLYOFFICE_BACKEND_URL}/api/office/doc/{key}'
+        # IMPORTANT: URL must end with .docx so OnlyOffice can detect the file type
+        doc_url      = f'{ONLYOFFICE_BACKEND_URL}/api/office/doc/{key}/{filename}'
         callback_url = f'{ONLYOFFICE_BACKEND_URL}/api/office/callback/{key}'
 
         oo_config = {
@@ -550,16 +551,22 @@ def office_create_session():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/office/doc/<key>', methods=['GET'])
-def office_get_doc(key):
-    """Serve the DOCX file to the OnlyOffice Document Server."""
+@app.route('/api/office/doc/<key>/<filename>', methods=['GET'])
+@app.route('/api/office/doc/<key>', methods=['GET'])          # backward-compat
+def office_get_doc(key, filename=None):
+    """
+    Serve the DOCX file to the OnlyOffice Document Server.
+    The URL intentionally ends with .docx so OnlyOffice can detect the file type
+    from the extension (required by OnlyOffice ≥ 7.x).
+    """
     session = _oo_sessions.get(key)
     if not session:
         return jsonify({'error': 'Session not found or expired'}), 404
+    fname = filename or session['filename']
     return Response(
         session['bytes'],
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        headers={'Content-Disposition': f'inline; filename="{session["filename"]}"'},
+        headers={'Content-Disposition': f'inline; filename="{fname}"'},
     )
 
 
