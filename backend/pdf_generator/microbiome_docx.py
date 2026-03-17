@@ -344,20 +344,20 @@ class MicrobiomeDOCXGenerator:
         """Cover page: logo (optional), title, patient info band at 0.38 of page height."""
 
         # ── Layout constants ──────────────────────────────────────────────────
-        # A4: 841.89 pt high, top margin 1.6 cm = 45.35 pt
-        # Band target: 0.38 × 841.89 − 45.35 ≈ 274.5 pt from content start
+        # A4: 841.89 pt high, top margin 2.5 cm = 70.87 pt
+        # Band target: 0.38 × 841.89 − 70.87 ≈ 248.8 pt from content start
         _LOGO_W          = Cm(7.5)           # logo display width
         _LOGO_W_PT       = 7.5 * 28.35       # ≈ 212.6 pt
         _LOGO_ASPECT     = 344 / 85          # px ratio of logo_bw.png
         _LOGO_H_PT       = _LOGO_W_PT / _LOGO_ASPECT   # ≈ 52.5 pt
-        _LOGO_BEFORE     = 50.0              # pt above logo
+        _LOGO_BEFORE     = 36.0              # pt above logo (reduced to fit)
         _LOGO_AFTER      = 10.0
         _TITLE_BEFORE    = 10.0
         _TITLE_H         = 26.0              # approx rendered height for Pt(22)
         _TITLE_AFTER     = 6.0
         _content_used    = (_LOGO_BEFORE + _LOGO_H_PT + _LOGO_AFTER
                             + _TITLE_BEFORE + _TITLE_H + _TITLE_AFTER)
-        _band_target_pt  = 0.38 * 841.89 - 45.35        # ≈ 274.5 pt
+        _band_target_pt  = 0.38 * 841.89 - 70.87        # ≈ 248.8 pt from content start
         _spacer_pt       = max(_band_target_pt - _content_used, 0)
 
         # ── Optional logo ─────────────────────────────────────────────────────
@@ -368,10 +368,13 @@ class MicrobiomeDOCXGenerator:
                 p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 p_logo.paragraph_format.space_before = Pt(_LOGO_BEFORE)
                 p_logo.paragraph_format.space_after  = Pt(_LOGO_AFTER)
-                p_logo.add_run().add_picture(self._logo_path, width=_LOGO_W)
+                run_logo = p_logo.add_run()
+                run_logo.add_picture(self._logo_path, width=_LOGO_W)
                 logo_drawn = True
-            except Exception:
-                pass
+            except Exception as _logo_err:
+                import logging
+                logging.getLogger(__name__).warning(
+                    'DOCX logo not embedded: %s (%s)', self._logo_path, _logo_err)
 
         # ── Title ─────────────────────────────────────────────────────────────
         p_t = doc.add_paragraph()
