@@ -481,7 +481,11 @@ def office_create_session():
             )
             return jsonify({'error': 'DOCX generation failed (invalid output)'}), 500
 
-        app.logger.info(f'[office/session] DOCX generated OK ({len(docx_bytes):,} bytes)')
+        app.logger.info(
+            f'[office/session] DOCX generated OK ({len(docx_bytes):,} bytes) '
+            f'magic={docx_bytes[:4]!r}'
+        )
+        app.logger.info(f'[office/session] doc_url will be: {ONLYOFFICE_BACKEND_URL}/api/office/doc/KEY/{filename}')
 
         # Patient name for display
         patient_name = ''
@@ -559,15 +563,50 @@ def office_get_doc(key, filename=None):
     The URL intentionally ends with .docx so OnlyOffice can detect the file type
     from the extension (required by OnlyOffice ≥ 7.x).
     """
+    remote = request.remote_addr
+    ua     = request.headers.get('User-Agent', '')[:80]
+    auth   = request.headers.get('Authorization', '')[:60]
+    app.logger.info(
+        f'[office/doc] GET key={key} fname={filename} '
+        f'from={remote} ua={ua!r} auth={auth!r}'
+    )
+    app.logger.info(f'[office/doc] active sessions: {list(_oo_sessions.keys())}')
+
     session = _oo_sessions.get(key)
     if not session:
+        app.logger.error(f'[office/doc] SESSION NOT FOUND for key={key}')
         return jsonify({'error': 'Session not found or expired'}), 404
+
+    docx_bytes = session['bytes']
     fname = filename or session['filename']
+    app.logger.info(
+        f'[office/doc] serving {fname} ({len(docx_bytes):,} bytes) '
+        f'magic={docx_bytes[:4]!r}'
+    )
     return Response(
-        session['bytes'],
+        docx_bytes,
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         headers={'Content-Disposition': f'inline; filename="{fname}"'},
     )
+
+
+@app.route('/api/office/sessions-debug', methods=['GET'])
+def office_sessions_debug():
+    """Debug endpoint: list active OnlyOffice sessions (no secrets)."""
+    now = time.time()
+    return jsonify({
+        'count': len(_oo_sessions),
+        'sessions': [
+            {
+                'key': k,
+                'filename': v['filename'],
+                'size': len(v['bytes']),
+                'magic': v['bytes'][:4].hex(),
+                'age_s': round(now - v['created']),
+            }
+            for k, v in _oo_sessions.items()
+        ]
+    })
 
 
 @app.route('/api/office/callback/<key>', methods=['POST'])
