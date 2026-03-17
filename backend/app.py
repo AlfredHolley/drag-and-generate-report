@@ -613,10 +613,15 @@ def office_sessions_debug():
 def office_callback(key):
     """
     OnlyOffice callback — called by the Document Server when the document is saved.
-    status 2 = document ready for saving  |  status 6 = force-save requested
+    status 1 = editing  |  2 = ready for save  |  3 = error  |  4 = closed  |  6 = forcesave
     """
     data   = request.get_json(silent=True) or {}
     status = data.get('status', 0)
+    app.logger.info(
+        f'[office/callback] key={key} status={status} '
+        f'url={data.get("url", "")!r} '
+        f'full={data}'
+    )
 
     if status in (2, 6):
         download_url = data.get('url', '')

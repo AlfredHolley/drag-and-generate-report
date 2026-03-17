@@ -113,11 +113,19 @@ def _para_bottom_border(para, color: str, size: int = 6, space: int = 4) -> None
 
 def _tbl_borders(tbl, *, outer_sz: int = 0, inner_sz: int = 2,
                  inner_color: str = 'E8E8E8') -> None:
-    """Configure table borders: no outer borders, very light inner horizontal lines."""
+    """Configure table borders: no outer borders, very light inner horizontal lines.
+
+    Removes any existing w:tblBorders before adding the new one — OOXML allows
+    only one w:tblBorders per tblPr (strict parsers like OnlyOffice reject dups).
+    """
     tblPr = tbl._tbl.find(qn('w:tblPr'))
     if tblPr is None:
         tblPr = OxmlElement('w:tblPr')
         tbl._tbl.insert(0, tblPr)
+
+    # Remove any existing w:tblBorders
+    for existing in tblPr.findall(qn('w:tblBorders')):
+        tblPr.remove(existing)
 
     tblBorders = OxmlElement('w:tblBorders')
     for side in ('top', 'left', 'bottom', 'right', 'insideV'):
@@ -150,11 +158,19 @@ def _cell_bottom_border(cell, color: str = 'BBBBBB', size: int = 4) -> None:
 
 
 def _tbl_full_width(tbl) -> None:
-    """Set a table to 100 % page width."""
+    """Set a table to 100 % page width.
+
+    python-docx always adds a default <w:tblW type='auto' w='0'/> to tblPr.
+    OOXML allows only ONE w:tblW per tblPr, so we remove any existing one
+    before inserting ours (strict parsers like OnlyOffice reject duplicates).
+    """
     tblPr = tbl._tbl.find(qn('w:tblPr'))
     if tblPr is None:
         tblPr = OxmlElement('w:tblPr')
         tbl._tbl.insert(0, tblPr)
+    # Remove any existing w:tblW (python-docx adds one by default)
+    for existing in tblPr.findall(qn('w:tblW')):
+        tblPr.remove(existing)
     tblW = OxmlElement('w:tblW')
     tblW.set(qn('w:w'),    '5000')
     tblW.set(qn('w:type'), 'pct')
