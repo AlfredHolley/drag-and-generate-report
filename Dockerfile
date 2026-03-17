@@ -49,7 +49,9 @@ RUN mkdir -p /app/uploads /app/outputs
 # Expose port
 EXPOSE 5000
 
-# Run with Gunicorn
-# --preload: Charge l'app UNE SEULE fois avant de forker les workers
-# Cela évite que chaque worker démarre son propre CleanupService
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "1", "--timeout", "120", "--preload", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
+# Run with Gunicorn — gthread worker class
+# --worker-class gthread  : threads instead of processes → shared memory (OnlyOffice sessions)
+# --workers 1             : single process (sessions dict shared by all threads)
+# --threads 4             : 4 concurrent requests — no blocking on slow generation
+# --preload               : load app once before forking (avoids duplicate CleanupService)
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--worker-class", "gthread", "--workers", "1", "--threads", "4", "--timeout", "120", "--preload", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
