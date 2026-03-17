@@ -58,37 +58,22 @@ echo "📁 Ensuring directories exist..."
 mkdir -p backend/uploads backend/outputs
 touch backend/uploads/.gitkeep backend/outputs/.gitkeep 2>/dev/null || true
 
-# Ensure shared-proxy network exists (required by docker-compose.yml)
-docker network inspect shared-proxy >/dev/null 2>&1 \
-  || docker network create shared-proxy
+# Stop existing containers to free ports
+echo "🛑 Stopping existing containers..."
+docker-compose down || true
 
-# ── Smart restart: rebuild & restart only app services ───────────────────────
-# OnlyOffice takes 2-3 min to start and rarely changes — we leave it running.
-echo "🛑 Stopping app services (backend + nginx only)..."
-docker compose stop backend nginx 2>/dev/null || docker-compose stop backend nginx 2>/dev/null || true
+# Rebuild Docker images (using cache if possible)
+# Only rebuild if requirements.txt or Dockerfile changed
+echo "🔨 Rebuilding Docker images (with cache)..."
+docker-compose build
 
-echo "🔨 Rebuilding backend image (with cache)..."
-docker compose build backend 2>/dev/null || docker-compose build backend
-
-echo "🚀 Starting app services..."
-docker compose up -d --no-deps backend nginx 2>/dev/null \
-  || docker-compose up -d --no-deps backend nginx
-
-# Start OnlyOffice only if it is NOT already running
-OO_RUNNING=$(docker compose ps onlyoffice --status running --quiet 2>/dev/null \
-             || docker ps -q --filter "name=report-generator-onlyoffice" --filter "status=running" 2>/dev/null \
-             || true)
-if [ -z "$OO_RUNNING" ]; then
-  echo "🚀 OnlyOffice not running — starting it..."
-  docker compose up -d --no-deps onlyoffice 2>/dev/null \
-    || docker-compose up -d --no-deps onlyoffice 2>/dev/null || true
-else
-  echo "✓ OnlyOffice already running — skipped restart."
-fi
+# Start containers
+echo "🚀 Starting containers..."
+docker-compose up -d
 
 # Wait for services to be ready
 echo "⏳ Waiting for services to be ready..."
-sleep 10
+sleep 15
 
 # Check health
 echo "🏥 Checking service health..."

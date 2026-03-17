@@ -70,32 +70,16 @@ def _shd(cell, hex_color: str) -> None:
     tcPr.append(shd)
 
 
-def _page_number_field(para) -> None:
-    """
-    Insert a {PAGE} auto-field into *para* using three separate runs,
-    as required by strict OOXML (begin / instrText / end must be in distinct runs).
-    """
-    # Run 1 — fldChar begin
-    r1 = OxmlElement('w:r')
-    fc1 = OxmlElement('w:fldChar')
-    fc1.set(qn('w:fldCharType'), 'begin')
-    r1.append(fc1)
-    para._p.append(r1)
-
-    # Run 2 — instrText
-    r2 = OxmlElement('w:r')
-    it = OxmlElement('w:instrText')
-    it.set(qn('xml:space'), 'preserve')
-    it.text = ' PAGE '
-    r2.append(it)
-    para._p.append(r2)
-
-    # Run 3 — fldChar end
-    r3 = OxmlElement('w:r')
-    fc3 = OxmlElement('w:fldChar')
-    fc3.set(qn('w:fldCharType'), 'end')
-    r3.append(fc3)
-    para._p.append(r3)
+def _page_number_field(run) -> None:
+    """Insert a {PAGE} auto-field into a run."""
+    for tag, ftype in (('w:fldChar', 'begin'), ('w:instrText', None), ('w:fldChar', 'end')):
+        el = OxmlElement(tag)
+        if tag == 'w:instrText':
+            el.set(qn('xml:space'), 'preserve')
+            el.text = ' PAGE '
+        else:
+            el.set(qn('w:fldCharType'), ftype)
+        run._r.append(el)
 
 
 def _para_bottom_border(para, color: str, size: int = 6, space: int = 4) -> None:
@@ -113,19 +97,11 @@ def _para_bottom_border(para, color: str, size: int = 6, space: int = 4) -> None
 
 def _tbl_borders(tbl, *, outer_sz: int = 0, inner_sz: int = 2,
                  inner_color: str = 'E8E8E8') -> None:
-    """Configure table borders: no outer borders, very light inner horizontal lines.
-
-    Removes any existing w:tblBorders before adding the new one — OOXML allows
-    only one w:tblBorders per tblPr (strict parsers like OnlyOffice reject dups).
-    """
+    """Configure table borders: no outer borders, very light inner horizontal lines."""
     tblPr = tbl._tbl.find(qn('w:tblPr'))
     if tblPr is None:
         tblPr = OxmlElement('w:tblPr')
         tbl._tbl.insert(0, tblPr)
-
-    # Remove any existing w:tblBorders
-    for existing in tblPr.findall(qn('w:tblBorders')):
-        tblPr.remove(existing)
 
     tblBorders = OxmlElement('w:tblBorders')
     for side in ('top', 'left', 'bottom', 'right', 'insideV'):
@@ -158,19 +134,11 @@ def _cell_bottom_border(cell, color: str = 'BBBBBB', size: int = 4) -> None:
 
 
 def _tbl_full_width(tbl) -> None:
-    """Set a table to 100 % page width.
-
-    python-docx always adds a default <w:tblW type='auto' w='0'/> to tblPr.
-    OOXML allows only ONE w:tblW per tblPr, so we remove any existing one
-    before inserting ours (strict parsers like OnlyOffice reject duplicates).
-    """
+    """Set a table to 100 % page width."""
     tblPr = tbl._tbl.find(qn('w:tblPr'))
     if tblPr is None:
         tblPr = OxmlElement('w:tblPr')
         tbl._tbl.insert(0, tblPr)
-    # Remove any existing w:tblW (python-docx adds one by default)
-    for existing in tblPr.findall(qn('w:tblW')):
-        tblPr.remove(existing)
     tblW = OxmlElement('w:tblW')
     tblW.set(qn('w:w'),    '5000')
     tblW.set(qn('w:type'), 'pct')
@@ -363,8 +331,12 @@ class MicrobiomeDOCXGenerator:
 
         ftr_p.add_run('\t')
 
-        # Page number — uses 3 separate runs (strict OOXML requirement)
-        _page_number_field(ftr_p)
+        rpg = ftr_p.add_run()
+        rpg.font.name = 'Calibri'
+        rpg.font.size = Pt(9)
+        rpg.font.bold = True
+        rpg.font.color.rgb = C_DARK_GRAY
+        _page_number_field(rpg)
 
     # ── Cover page ────────────────────────────────────────────────────────────
 
@@ -396,11 +368,7 @@ class MicrobiomeDOCXGenerator:
                 p_logo.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 p_logo.paragraph_format.space_before = Pt(_LOGO_BEFORE)
                 p_logo.paragraph_format.space_after  = Pt(_LOGO_AFTER)
-                _pic = p_logo.add_run().add_picture(self._logo_path, width=_LOGO_W)
-                # Add alt text (descr) — required by strict OOXML parsers
-                _doc_pr = _pic._inline.find(qn('wp:docPr'))
-                if _doc_pr is not None:
-                    _doc_pr.set('descr', 'Buchinger Wilhelmi logo')
+                p_logo.add_run().add_picture(self._logo_path, width=_LOGO_W)
                 logo_drawn = True
             except Exception:
                 pass
