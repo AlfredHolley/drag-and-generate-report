@@ -89,13 +89,23 @@ jobs:
             set_env ONLYOFFICE_JWT_ENABLED   "true"
             set_env ONLYOFFICE_BACKEND_URL   "http://backend:5000"
 
-            # ONLYOFFICE_URL: public URL of the OnlyOffice editor UI
-            # Defaults to the VPS hostname on port 8080 if not already set
+            # ONLYOFFICE_URL: public URL the *browser* uses to load the OnlyOffice editor.
+            # Since Nginx proxies /office/ → onlyoffice container, the URL is:
+            #   https://<domain>/office
+            # We derive the domain from the ALLOWED_ORIGINS or VIRTUAL_HOST in .env,
+            # or fall back to the VPS hostname.
             if ! grep -q "^ONLYOFFICE_URL=" .env 2>/dev/null; then
-              HOST_IP=$(hostname -I | awk '{print $1}')
-              set_env ONLYOFFICE_URL "http://${HOST_IP}:8080"
-              echo "    ONLYOFFICE_URL defaulted to http://${HOST_IP}:8080"
-              echo "     Update this in .env if you have a domain name."
+              # Try to detect the domain from existing .env entries
+              DOMAIN=$(grep -oP 'https?://\K[^/,]+' .env 2>/dev/null | grep '\.' | grep -v 'localhost' | head -1 || true)
+              if [ -n "$DOMAIN" ]; then
+                set_env ONLYOFFICE_URL "https://${DOMAIN}/office"
+                echo "  ✓ ONLYOFFICE_URL set to https://${DOMAIN}/office"
+              else
+                HOST_IP=$(hostname -I | awk '{print $1}')
+                set_env ONLYOFFICE_URL "http://${HOST_IP}:8080"
+                echo "    ONLYOFFICE_URL defaulted to http://${HOST_IP}:8080"
+                echo "     → Update .env: ONLYOFFICE_URL=https://your-domain.com/office"
+              fi
             else
               echo "  ✓ ONLYOFFICE_URL already set: $(grep ONLYOFFICE_URL .env | cut -d= -f2)"
             fi

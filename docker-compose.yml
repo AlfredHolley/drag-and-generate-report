@@ -61,14 +61,14 @@ services:
       - onlyoffice_data:/var/www/onlyoffice/Data
       - onlyoffice_logs:/var/log/onlyoffice
       - onlyoffice_cache:/var/lib/onlyoffice
-    # ── Port mapping (local dev / direct access) ──────────────────────────────
-    # Exposes the editor UI on http://localhost:8080
-    # In production: comment out ports and use your Traefik/proxy labels instead.
-    ports:
-      - "${ONLYOFFICE_PORT:-8080}:80"
+    # ── Port mapping (local dev only) ─────────────────────────────────────────
+    # In production, OnlyOffice is accessed via Nginx at /office/ (internal only).
+    # Uncomment only for local development:
+    # ports:
+    #   - "${ONLYOFFICE_PORT:-8080}:80"
     networks:
-      - app-network    # allows backend to call http://onlyoffice/
-      - shared-proxy   # allows your reverse proxy to route traffic to it
+      - app-network    # Nginx proxies /office/ → http://onlyoffice/ internally
+      # Note: NOT on shared-proxy — OnlyOffice must not be publicly exposed.
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/healthcheck"]
       interval: 30s
