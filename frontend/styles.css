@@ -902,12 +902,155 @@ body {
     border-bottom: 1px solid #e0ded8;
     background: #fafaf8;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .result-pane-comments-body {
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 0;
+}
+
+/* ── Alarm badge ─────────────────────────────────────────────────── */
+.alarm-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: #c0392b;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1;
+}
+
+/* ── Alarm panel placeholder ─────────────────────────────────────── */
+.alarm-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 40px 20px;
+    color: #aaa;
+    font-size: 0.8rem;
+    text-align: center;
+    line-height: 1.5;
+}
+
+.alarm-placeholder svg {
+    opacity: 0.35;
+}
+
+.alarm-placeholder--ok {
+    color: #5a9e6b;
+}
+
+.alarm-placeholder--ok svg {
+    opacity: 0.55;
+    stroke: #5a9e6b;
+}
+
+/* ── Alarm section block ─────────────────────────────────────────── */
+.alarm-section {
+    border-bottom: 1px solid #e8e6e0;
+}
+
+.alarm-section:last-child {
+    border-bottom: none;
+}
+
+.alarm-section-hd {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #333;
+    padding: 10px 14px 4px;
+    background: #f2f1ed;
+}
+
+/* ── Subsection header ───────────────────────────────────────────── */
+.alarm-sub-hd {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #666;
+    padding: 6px 14px 2px 18px;
+    letter-spacing: 0.02em;
+}
+
+/* ── Parameter row ───────────────────────────────────────────────── */
+.alarm-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 5px 14px 5px 22px;
+    border-top: 1px solid #f0ede7;
+    font-size: 0.74rem;
+    line-height: 1.35;
+}
+
+.alarm-row:hover {
+    background: #f7f6f2;
+}
+
+.alarm-row-name {
+    flex: 1 1 auto;
+    color: #333;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.alarm-row-right {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    flex-shrink: 0;
+    font-size: 0.7rem;
+}
+
+.alarm-row-result {
+    font-weight: 600;
+    color: #222;
+    white-space: nowrap;
+}
+
+.alarm-row-result--sm {
+    font-size: 0.62rem;
+    font-weight: 400;
+}
+
+.alarm-row-unit {
+    color: #999;
+    font-size: 0.63rem;
+    white-space: nowrap;
+}
+
+.alarm-row-ref {
+    color: #aaa;
+    font-size: 0.63rem;
+    white-space: nowrap;
+    padding: 0 2px;
+    border-left: 1px solid #ddd;
+    padding-left: 4px;
+}
+
+.alarm-marker {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #555;
+    flex-shrink: 0;
+    width: 12px;
+    text-align: center;
 }
 
 @media (max-width: 768px) {

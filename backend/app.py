@@ -363,6 +363,145 @@ def generate_docx():
         return jsonify({'error': f'DOCX generation error: {str(e)}'}), 500
 
 
+@app.route('/api/alarmed-parameters', methods=['POST'])
+def list_alarmed_parameters():
+    """
+    Return out-of-norm parameters grouped by section → subsection.
+
+    Body (multipart/form-data):
+        file       : The Excel file
+        sheet_name : (optional) Sheet index or name
+
+    Response:
+        JSON { "sections": [...], "total": N }
+        Each section: { "name": str, "subsections": [{ "name": str|null, "params": [...] }] }
+        Each param:   { "name": str, "result": str, "unit": str, "ref": str }
+    """
+    import re as _re2
+    from collections import OrderedDict
+    from pdf_generator.microbiome_pdf import SUBSECTION_MAP
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'Unsupported format. Use .xlsx or .xls'}), 400
+
+    sheet_param = request.form.get('sheet_name', 0)
+    try:
+        sheet_param = int(sheet_param)
+    except (ValueError, TypeError):
+        pass
+
+    try:
+        file_bytes = file.read()
+        xl_file    = pd.ExcelFile(io.BytesIO(file_bytes), engine='openpyxl')
+        if isinstance(sheet_param, int):
+            sheet_name = xl_file.sheet_names[min(sheet_param, len(xl_file.sheet_names) - 1)]
+        else:
+            sheet_name = sheet_param if sheet_param in xl_file.sheet_names else xl_file.sheet_names[0]
+        df = xl_file.parse(sheet_name)
+
+        # ── Helper functions ─────────────────────────────────────────────────
+        def _cp(val):
+            s = str(val).strip()
+            return '' if s in ('', 'nan', 'None') else _re2.sub(r'\s*\[[^\[\]]+\]\s*$', '', s).strip()
+
+        def _cv(val):
+            s = str(val).strip()
+            return '' if s in ('', 'nan', 'None') else s
+
+        def _res(row):
+            r1 = _cv(row.get('Resultado1', ''))
+            r2 = _cv(row.get('Resultado2', ''))
+            return r1 or (r2[:40] + ('…' if len(r2) > 40 else '') if r2 else '—')
+
+        def _ref(row):
+            hi = _cv(row.get('VRMaximo', '')).replace(',', '.')
+            lo = _cv(row.get('VRMinimo', '')).replace(',', '.')
+            if lo and hi: return f'{lo} – {hi}'
+            if hi:        return f'< {hi}'
+            if lo:        return f'> {lo}'
+            return '—'
+
+        def _alarmed(row):
+            return str(row.get('Alarma', 'Falso')).strip() == 'Verdadero'
+
+        # ── Build hierarchical alarmed list ─────────────────────────────────
+        result_sections = []
+        total = 0
+
+        for section in df['TipoInforme'].unique():
+            sec_df      = df[df['TipoInforme'] == section]
+            subs_def    = SUBSECTION_MAP.get(section, [])
+            sec_entry   = {'name': str(section), 'subsections': []}
+
+            if subs_def:
+                trigger_to_idx: dict = {}
+                for si, (title, _, triggers) in enumerate(subs_def):
+                    if isinstance(triggers, str):
+                        triggers = [triggers]
+                    for t in triggers:
+                        trigger_to_idx[t] = si
+                sub_meta = {i: title for i, (title, _, _) in enumerate(subs_def)}
+
+                pre_rows:        list = []
+                row_assignments: list = []
+                cur_idx               = None
+
+                for _, row in sec_df.iterrows():
+                    cleaned = _cp(row.get('Ensayo', ''))
+                    if cleaned in trigger_to_idx:
+                        cur_idx = trigger_to_idx[cleaned]
+                    if cur_idx is None:
+                        pre_rows.append(row.name)
+                    else:
+                        row_assignments.append((cur_idx, row.name))
+
+                merged: OrderedDict = OrderedDict()
+                for si, ridx in row_assignments:
+                    merged.setdefault(si, []).append(ridx)
+                if pre_rows and merged:
+                    first_key = next(iter(merged))
+                    merged[first_key] = pre_rows + merged[first_key]
+
+                for si, indices in sorted(merged.items()):
+                    sub_df = sec_df.loc[indices]
+                    params = [
+                        {'name': _cp(r.get('Ensayo', '')).lstrip('- ').strip(),
+                         'result': _res(r),
+                         'unit': _cv(r.get('Unidad1', '')),
+                         'ref': _ref(r)}
+                        for _, r in sub_df.iterrows()
+                        if _alarmed(r) and _cp(r.get('Ensayo', '')).lstrip('- ').strip()
+                    ]
+                    if params:
+                        sec_entry['subsections'].append(
+                            {'name': sub_meta.get(si, ''), 'params': params})
+                        total += len(params)
+            else:
+                params = [
+                    {'name': _cp(r.get('Ensayo', '')).lstrip('- ').strip(),
+                     'result': _res(r),
+                     'unit': _cv(r.get('Unidad1', '')),
+                     'ref': _ref(r)}
+                    for _, r in sec_df.iterrows()
+                    if _alarmed(r) and _cp(r.get('Ensayo', '')).lstrip('- ').strip()
+                ]
+                if params:
+                    sec_entry['subsections'].append({'name': None, 'params': params})
+                    total += len(params)
+
+            if sec_entry['subsections']:
+                result_sections.append(sec_entry)
+
+        return jsonify({'sections': result_sections, 'total': total})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/sheets', methods=['POST'])
 def list_sheets():
     """

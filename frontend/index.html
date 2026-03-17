@@ -165,53 +165,20 @@
                         <!-- Drag handle -->
                         <div class="pane-resizer" id="paneResizer" title="Drag to resize"></div>
 
-                        <!-- Right — Doctor Comments -->
-                        <div class="result-pane-comments" id="doctorCommentsPanel">
-                            <div class="result-pane-comments-label">Doctor comments</div>
-                            <div class="result-pane-comments-body">
-
-                                <!-- Page number -->
-                                <label style="font-size:0.72rem;color:#777;display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Page number</label>
-                                <input id="commentPage" type="number" min="1" placeholder="e.g. 3"
-                                       style="width:100%;padding:8px 10px;font-size:1rem;font-weight:600;border:2px solid #ccc;border-radius:3px;box-sizing:border-box;margin-bottom:14px;color:#222;"/>
-
-                                <!-- Comment text -->
-                                <label style="font-size:0.72rem;color:#777;display:block;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Comment</label>
-                                <textarea id="commentText" rows="5" placeholder="Enter doctor note…"
-                                          style="width:100%;padding:8px 10px;font-size:0.88rem;border:2px solid #ccc;border-radius:3px;box-sizing:border-box;resize:vertical;margin-bottom:12px;font-family:inherit;"></textarea>
-
-                                <button onclick="addComment()"
-                                        style="width:100%;padding:9px;font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;background:var(--black);color:#fff;border:none;border-radius:3px;cursor:pointer;margin-bottom:16px;">
-                                    + &nbsp;Add comment
-                                </button>
-
-                                <!-- List of pending comments -->
-                                <div id="commentsList" style="font-size:0.78rem;color:#555;"></div>
-
-                                <!-- Regenerate -->
-                                <button id="regenBtn" onclick="regenerateWithComments()" class="hidden"
-                                        style="width:100%;padding:9px;font-size:0.82rem;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;background:#1a5276;color:#fff;border:none;border-radius:3px;cursor:pointer;margin-top:10px;">
-                                    ↻ &nbsp;Regenerate with comments
-                                </button>
-
-                                <!-- Regen spinner -->
-                                <div id="regenSpinner" class="hidden"
-                                     style="text-align:center;padding:10px;font-size:0.78rem;color:#888;">
-                                    Generating…
-                                </div>
-
-                                <!-- ── Report parameters list ── -->
-                                <div style="margin-top:20px;border-top:1px solid #e0ded8;padding-top:14px;">
-                                    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#555;margin-bottom:4px;">
-                                        Report parameters
-                                    </div>
-                                    <div style="font-size:0.7rem;color:#999;margin-bottom:8px;">
-                                        Type <strong style="color:#2a6496;">@</strong> in the comment field to tag a parameter
-                                    </div>
-                                    <div id="paramsList"
-                                         style="max-height:240px;overflow-y:auto;border:1px solid #e0ded8;border-radius:3px;background:#fff;padding:2px;">
-                                        <span style="display:block;padding:8px;color:#bbb;font-size:0.72rem;">No file loaded yet</span>
-                                    </div>
+                        <!-- Right — Out-of-norm parameters -->
+                        <div class="result-pane-comments" id="alarmPanel">
+                            <div class="result-pane-comments-label">
+                                Out-of-norm parameters
+                                <span class="alarm-badge hidden" id="alarmBadge">0</span>
+                            </div>
+                            <div class="result-pane-comments-body" id="alarmPanelBody">
+                                <div class="alarm-placeholder">
+                                    <svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <circle cx="16" cy="16" r="13"/>
+                                        <line x1="16" y1="9" x2="16" y2="17"/>
+                                        <circle cx="16" cy="22" r="1.2" fill="currentColor" stroke="none"/>
+                                    </svg>
+                                    <span>Load a file to see<br>out-of-norm parameters</span>
                                 </div>
                             </div>
                         </div>
@@ -243,12 +210,6 @@
 
     </div>
 
-    <!-- @mention parameter dropdown (position:fixed, managed by JS) -->
-    <div id="mentionDropdown" class="hidden"
-         style="position:fixed;z-index:99999;background:#fff;border:1px solid #b8d4e8;
-                border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.14);
-                max-height:200px;overflow-y:auto;min-width:220px;"></div>
-
     <script>
         const dropZone   = document.getElementById('dropZone');
         const fileInput  = document.getElementById('fileInput');
@@ -260,8 +221,7 @@
         let pdfBlob         = null;
         let pdfBlobUrl      = null;   // kept alive for preview + download
         let pdfFilename     = 'report.pdf';
-        let doctorComments  = {};     // {pageNum (int): commentText (str)}
-        let parametersCache = [];     // list of parameter names from the loaded file
+        let alarmedSummary  = null;   // { sections: [...], total: N } from /api/alarmed-parameters
 
         // ── Drag & Drop ──────────────────────────────────────────────────
         dropZone.addEventListener('click', () => fileInput.click());
@@ -299,8 +259,8 @@
             dropFilename.textContent = `${(file.size / 1024).toFixed(1)} KB`;
             dropFilename.classList.remove('hidden');
             convertBtn.classList.remove('hidden');
-            // Pre-load parameter list in background for the @mention feature
-            loadParameters(file);
+            // Pre-load alarmed parameters in background
+            loadAlarmedParams(file);
         }
 
         // ── Progress helpers ─────────────────────────────────────────────
@@ -387,6 +347,7 @@
                     downloadDocx();
 
                 showSection('result');
+                renderAlarmedParams();
 
                 // ── Render PDF preview via PDF.js (canvas-based, no plugin) ──
                 await renderPDFPreview(pdfArrayBuffer);
@@ -486,9 +447,8 @@
         }
 
         function resetApp() {
-            selectedFile    = pdfBlob = null;
-            doctorComments  = {};
-            parametersCache = [];
+            selectedFile   = pdfBlob = null;
+            alarmedSummary = null;
             if (pdfBlobUrl) { URL.revokeObjectURL(pdfBlobUrl); pdfBlobUrl = null; }
             fileInput.value = '';
             dropZone.classList.remove('has-file', 'drag-over');
@@ -497,185 +457,90 @@
             convertBtn.classList.add('hidden');
             setProgress(0);
             document.getElementById('pdfCanvasContainer').innerHTML = '';
-            document.getElementById('commentsList').innerHTML = '';
-            document.getElementById('regenBtn').classList.add('hidden');
-            renderParamsList();   // reset to "No file loaded"
+            resetAlarmPanel();
             showSection('upload');
         }
 
-        // ── Doctor Comments ────────────────────────────────────────────────
-        function addComment() {
-            const pageInput = document.getElementById('commentPage');
-            const textInput = document.getElementById('commentText');
-            const page = parseInt(pageInput.value, 10);
-            const text = textInput.value.trim();
-
-            if (!page || page < 1) {
-                pageInput.style.borderColor = '#c00';
-                pageInput.focus();
-                setTimeout(() => pageInput.style.borderColor = '#ccc', 1500);
-                return;
-            }
-            if (!text) {
-                textInput.style.borderColor = '#c00';
-                textInput.focus();
-                setTimeout(() => textInput.style.borderColor = '#ccc', 1500);
-                return;
-            }
-
-            doctorComments[page] = text;
-            pageInput.value  = '';
-            textInput.value  = '';
-            renderCommentsList();
-            document.getElementById('regenBtn').classList.remove('hidden');
-        }
-
-        function removeComment(page) {
-            delete doctorComments[page];
-            renderCommentsList();
-            if (Object.keys(doctorComments).length === 0) {
-                document.getElementById('regenBtn').classList.add('hidden');
-            }
-        }
-
-        function renderCommentsList() {
-            const container = document.getElementById('commentsList');
-            const pages = Object.keys(doctorComments).map(Number).sort((a,b) => a-b);
-            if (pages.length === 0) { container.innerHTML = ''; return; }
-
-            container.innerHTML = pages.map(p =>
-                `<div style="display:flex;justify-content:space-between;align-items:flex-start;
-                             padding:6px 0;border-bottom:1px solid #e8e6e0;">
-                    <span>
-                        <strong style="color:#333;">Page ${p}</strong><br>
-                        <span style="color:#666;">${escapeHtml(doctorComments[p])}</span>
-                    </span>
-                    <button onclick="removeComment(${p})"
-                            style="background:none;border:none;color:#c00;cursor:pointer;font-size:1rem;padding:0 0 0 6px;line-height:1;">×</button>
-                </div>`
-            ).join('');
-        }
-
         function escapeHtml(str) {
-            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         }
 
-        // ── Parameters list + @mention ──────────────────────────────────────
+        // ── Out-of-norm parameters panel ───────────────────────────────────
 
-        async function loadParameters(file) {
+        async function loadAlarmedParams(file) {
             try {
                 const fd = new FormData();
                 fd.append('file', file);
-                const resp = await fetch('/api/parameters', { method: 'POST', body: fd });
+                const resp = await fetch('/api/alarmed-parameters', { method: 'POST', body: fd });
                 if (resp.ok) {
-                    const data = await resp.json();
-                    parametersCache = data.parameters || [];
-                    renderParamsList();
+                    alarmedSummary = await resp.json();
                 }
             } catch (e) { /* silent — non-blocking */ }
         }
 
-        function renderParamsList() {
-            const el = document.getElementById('paramsList');
-            if (!el) return;
-            if (!parametersCache.length) {
-                el.innerHTML = '<span style="display:block;padding:8px;color:#bbb;font-size:0.72rem;">No file loaded yet</span>';
+        function resetAlarmPanel() {
+            alarmedSummary = null;
+            const body  = document.getElementById('alarmPanelBody');
+            const badge = document.getElementById('alarmBadge');
+            if (badge) badge.classList.add('hidden');
+            if (body) body.innerHTML =
+                `<div class="alarm-placeholder">
+                    <svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="16" cy="16" r="13"/>
+                        <line x1="16" y1="9" x2="16" y2="17"/>
+                        <circle cx="16" cy="22" r="1.2" fill="currentColor" stroke="none"/>
+                    </svg>
+                    <span>Load a file to see<br>out-of-norm parameters</span>
+                </div>`;
+        }
+
+        function renderAlarmedParams() {
+            const body  = document.getElementById('alarmPanelBody');
+            const badge = document.getElementById('alarmBadge');
+            if (!body) return;
+
+            if (!alarmedSummary || !alarmedSummary.sections || alarmedSummary.sections.length === 0) {
+                body.innerHTML =
+                    `<div class="alarm-placeholder alarm-placeholder--ok">
+                        <svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="16" cy="16" r="13"/>
+                            <polyline points="10,16 14,20 22,12"/>
+                        </svg>
+                        <span>All parameters<br>within reference ranges</span>
+                    </div>`;
+                if (badge) badge.classList.add('hidden');
                 return;
             }
-            el.innerHTML = '';
-            parametersCache.forEach(p => {
-                const div = document.createElement('div');
-                div.textContent = p;
-                div.title = `Click to insert @[${p}]`;
-                div.style.cssText = 'padding:5px 8px;cursor:pointer;font-size:0.75rem;color:#333;' +
-                    'border-bottom:1px solid #f4f3f0;display:flex;align-items:center;gap:5px;';
-                const at = document.createElement('span');
-                at.textContent = '@';
-                at.style.cssText = 'color:#2a6496;font-weight:700;font-size:0.7rem;flex-shrink:0;';
-                div.prepend(at);
-                div.addEventListener('mouseover',  () => div.style.background = '#edf4f8');
-                div.addEventListener('mouseout',   () => div.style.background = '');
-                div.addEventListener('mousedown',  () => insertParamTag(p));
-                el.appendChild(div);
-            });
-        }
 
-        function insertParamTag(name) {
-            const ta = document.getElementById('commentText');
-            const pos    = ta.selectionStart;
-            const before = ta.value.slice(0, pos);
-            const after  = ta.value.slice(pos);
-            // Replace partial @query if cursor is right after one; otherwise insert
-            const atIdx = before.lastIndexOf('@');
-            const afterAt = before.slice(atIdx + 1);
-            const isPartial = atIdx !== -1 && !afterAt.includes(' ') &&
-                              !afterAt.includes('\n') && !afterAt.includes(']');
-            const insertion = `@[${name}]`;
-            if (isPartial) {
-                ta.value = before.slice(0, atIdx) + insertion + after;
-                ta.selectionStart = ta.selectionEnd = atIdx + insertion.length;
-            } else {
-                ta.value = before + insertion + after;
-                ta.selectionStart = ta.selectionEnd = pos + insertion.length;
-            }
-            ta.focus();
-            hideMentionDD();
-        }
+            const total = alarmedSummary.total || 0;
+            if (badge) { badge.textContent = total; badge.classList.remove('hidden'); }
 
-        // ── @mention dropdown ───────────────────────────────────────────────
+            let html = '';
+            alarmedSummary.sections.forEach(section => {
+                html += `<div class="alarm-section">
+                    <div class="alarm-section-hd">${escapeHtml(section.name)}</div>`;
 
-        function setupMentionDD() {
-            const ta = document.getElementById('commentText');
-            if (!ta) return;
-
-            ta.addEventListener('input', function () {
-                const pos    = this.selectionStart;
-                const before = this.value.slice(0, pos);
-                const atIdx  = before.lastIndexOf('@');
-                if (atIdx !== -1) {
-                    const query    = before.slice(atIdx + 1);
-                    const noSpace  = !query.includes(' ') && !query.includes('\n') && !query.includes(']');
-                    if (noSpace) {
-                        const filtered = parametersCache
-                            .filter(p => p.toLowerCase().includes(query.toLowerCase()))
-                            .slice(0, 12);
-                        if (filtered.length) { showMentionDD(filtered, this); return; }
+                section.subsections.forEach(sub => {
+                    if (sub.name) {
+                        html += `<div class="alarm-sub-hd">${escapeHtml(sub.name)}</div>`;
                     }
-                }
-                hideMentionDD();
+                    sub.params.forEach(p => {
+                        const isLong = p.result.length > 12;
+                        html += `<div class="alarm-row">
+                            <span class="alarm-row-name">${escapeHtml(p.name)}</span>
+                            <span class="alarm-row-right">
+                                <span class="alarm-row-result${isLong ? ' alarm-row-result--sm' : ''}">${escapeHtml(p.result)}</span>
+                                ${p.unit ? `<span class="alarm-row-unit">${escapeHtml(p.unit)}</span>` : ''}
+                                <span class="alarm-row-ref">${escapeHtml(p.ref)}</span>
+                                <span class="alarm-marker">!</span>
+                            </span>
+                        </div>`;
+                    });
+                });
+                html += `</div>`;
             });
 
-            ta.addEventListener('keydown', e => { if (e.key === 'Escape') hideMentionDD(); });
-            ta.addEventListener('blur',    () => setTimeout(hideMentionDD, 160));
-        }
-
-        function showMentionDD(items, textarea) {
-            const dd   = document.getElementById('mentionDropdown');
-            const rect = textarea.getBoundingClientRect();
-            dd.style.left  = rect.left  + 'px';
-            dd.style.top   = (rect.bottom + 3) + 'px';
-            dd.style.width = rect.width + 'px';
-            dd.innerHTML   = '';
-            items.forEach(p => {
-                const div = document.createElement('div');
-                div.style.cssText = 'padding:7px 10px;cursor:pointer;font-size:0.8rem;color:#222;' +
-                    'border-bottom:1px solid #f0eff0;display:flex;align-items:center;gap:6px;';
-                const at = document.createElement('span');
-                at.textContent = '@';
-                at.style.cssText = 'color:#2a6496;font-weight:700;';
-                const txt = document.createElement('span');
-                txt.textContent = p;
-                div.append(at, txt);
-                div.addEventListener('mouseover', () => div.style.background = '#e8f4f8');
-                div.addEventListener('mouseout',  () => div.style.background = '');
-                div.addEventListener('mousedown', () => insertParamTag(p));
-                dd.appendChild(div);
-            });
-            dd.classList.remove('hidden');
-        }
-
-        function hideMentionDD() {
-            document.getElementById('mentionDropdown').classList.add('hidden');
+            body.innerHTML = html;
         }
 
         // ── DOCX download ─────────────────────────────────────────────────────
@@ -690,7 +555,6 @@
             try {
                 const fd = new FormData();
                 fd.append('file', selectedFile);
-                fd.append('comments', JSON.stringify(doctorComments));
 
                 const resp = await fetch('/api/generate-docx', {
                     method: 'POST',
@@ -718,54 +582,6 @@
                 btn.disabled = false;
             }
         }
-
-        async function regenerateWithComments() {
-            if (!selectedFile) return;
-
-            const regenBtn     = document.getElementById('regenBtn');
-            const regenSpinner = document.getElementById('regenSpinner');
-            regenBtn.classList.add('hidden');
-            regenSpinner.classList.remove('hidden');
-
-            try {
-                const fd = new FormData();
-                fd.append('file', selectedFile);
-                fd.append('comments', JSON.stringify(doctorComments));
-
-                const resp = await fetch('/api/generate-pdf', { method: 'POST', body: fd });
-                if (!resp.ok) {
-                    const err = await resp.json();
-                    throw new Error(err.error || 'PDF regeneration error');
-                }
-
-                const buf = await resp.arrayBuffer();
-                pdfBlob = new Blob([buf], { type: 'application/pdf' });
-                if (pdfBlobUrl) URL.revokeObjectURL(pdfBlobUrl);
-                pdfBlobUrl = URL.createObjectURL(pdfBlob);
-
-                // Update download button
-                document.getElementById('downloadPdfBtn').onclick = () => {
-                    const a = document.createElement('a');
-                    a.href     = pdfBlobUrl;
-                    a.download = pdfFilename;
-                    a.click();
-                };
-
-                // Re-render preview
-                await renderPDFPreview(buf);
-
-            } catch (err) {
-                alert('Error: ' + err.message);
-            } finally {
-                regenSpinner.classList.add('hidden');
-                regenBtn.classList.remove('hidden');
-            }
-        }
-
-        // Init @mention wiring once DOM is ready
-        document.addEventListener('DOMContentLoaded', setupMentionDD);
-        // Also wire immediately (script runs at end of body, DOM already available)
-        setupMentionDD();
 
         // ── Pane resizer ───────────────────────────────────────────────────────
         (function () {
