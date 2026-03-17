@@ -485,7 +485,7 @@ def office_create_session():
             f'[office/session] DOCX generated OK ({len(docx_bytes):,} bytes) '
             f'magic={docx_bytes[:4]!r}'
         )
-        app.logger.info(f'[office/session] doc_url will be: {ONLYOFFICE_BACKEND_URL}/api/office/doc/KEY/{filename}')
+        app.logger.info(f'[office/session] backend_url={ONLYOFFICE_BACKEND_URL}')
 
         # Patient name for display
         patient_name = ''
