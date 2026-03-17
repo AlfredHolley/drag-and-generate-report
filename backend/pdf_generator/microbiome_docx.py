@@ -70,16 +70,32 @@ def _shd(cell, hex_color: str) -> None:
     tcPr.append(shd)
 
 
-def _page_number_field(run) -> None:
-    """Insert a {PAGE} auto-field into a run."""
-    for tag, ftype in (('w:fldChar', 'begin'), ('w:instrText', None), ('w:fldChar', 'end')):
-        el = OxmlElement(tag)
-        if tag == 'w:instrText':
-            el.set(qn('xml:space'), 'preserve')
-            el.text = ' PAGE '
-        else:
-            el.set(qn('w:fldCharType'), ftype)
-        run._r.append(el)
+def _page_number_field(para) -> None:
+    """
+    Insert a {PAGE} auto-field into *para* using three separate runs,
+    as required by strict OOXML (begin / instrText / end must be in distinct runs).
+    """
+    # Run 1 — fldChar begin
+    r1 = OxmlElement('w:r')
+    fc1 = OxmlElement('w:fldChar')
+    fc1.set(qn('w:fldCharType'), 'begin')
+    r1.append(fc1)
+    para._p.append(r1)
+
+    # Run 2 — instrText
+    r2 = OxmlElement('w:r')
+    it = OxmlElement('w:instrText')
+    it.set(qn('xml:space'), 'preserve')
+    it.text = ' PAGE '
+    r2.append(it)
+    para._p.append(r2)
+
+    # Run 3 — fldChar end
+    r3 = OxmlElement('w:r')
+    fc3 = OxmlElement('w:fldChar')
+    fc3.set(qn('w:fldCharType'), 'end')
+    r3.append(fc3)
+    para._p.append(r3)
 
 
 def _para_bottom_border(para, color: str, size: int = 6, space: int = 4) -> None:
@@ -331,12 +347,8 @@ class MicrobiomeDOCXGenerator:
 
         ftr_p.add_run('\t')
 
-        rpg = ftr_p.add_run()
-        rpg.font.name = 'Calibri'
-        rpg.font.size = Pt(9)
-        rpg.font.bold = True
-        rpg.font.color.rgb = C_DARK_GRAY
-        _page_number_field(rpg)
+        # Page number — uses 3 separate runs (strict OOXML requirement)
+        _page_number_field(ftr_p)
 
     # ── Cover page ────────────────────────────────────────────────────────────
 

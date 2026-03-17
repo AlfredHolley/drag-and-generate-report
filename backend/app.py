@@ -472,6 +472,17 @@ def office_create_session():
         docx_bytes = generate_microbiome_docx(df, comments=comments,
                                               cited_params=cited_params or None)
 
+        # Sanity-check: DOCX is a ZIP — first bytes must be PK\x03\x04
+        if not docx_bytes or docx_bytes[:4] != b'PK\x03\x04':
+            app.logger.error(
+                f'[office/session] DOCX generation produced invalid bytes '
+                f'(size={len(docx_bytes) if docx_bytes else 0}, '
+                f'magic={docx_bytes[:4] if docx_bytes else b""})'
+            )
+            return jsonify({'error': 'DOCX generation failed (invalid output)'}), 500
+
+        app.logger.info(f'[office/session] DOCX generated OK ({len(docx_bytes):,} bytes)')
+
         # Patient name for display
         patient_name = ''
         if 'DescripcionMuestra' in df.columns:
